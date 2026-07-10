@@ -22,3 +22,21 @@
 - Add Testcontainers integration test for memory store
 - Add `PersonalContextProvider` implementation in `core-memory`
 - Wire `@ConditionalOnProperty` for embedding (skip if Ollama unavailable)
+
+---
+
+## Session: 2026-07-10 — Phase 1 + Phase 2 complete
+
+**Phase 1 (Personal Memory Engine):**
+- Reinforce-on-read in PGVectorPersonalMemoryStore; DefaultPersonalContextProvider; controller rewired to port; @ConditionalOnProperty embedding; JaCoCo 80% gate; 18 unit tests + PGVectorPersonalMemoryStoreIT
+
+**Phase 2 (Cognitive Session Management):**
+- SessionStatus enum; CognitiveSession.start()/withTurn()/close(); CognitiveSessionStore + UserPreferenceStore ports
+- V003 cognitive_sessions (partial unique ACTIVE index) + V004 user_preferences migrations
+- JdbcCognitiveSessionStore, JdbcUserPreferenceStore adapters; context provider enriched (session overrides memory-derived state)
+- CognitiveSessionController (create/list/get/addTurn/close), UserPreferenceController (GET/PUT)
+- 31 unit tests green; 2 new Testcontainers ITs (run in CI)
+
+**Next session:** Phase 3 — GDPR + Right to Erasure
+- DELETE /api/v1/users/{userId}/memories (erase all) and DELETE /api/v1/users/{userId} (full erasure)
+- Memory export endpoint, data_retention_days, erasure audit log, V005 user_privacy_settings

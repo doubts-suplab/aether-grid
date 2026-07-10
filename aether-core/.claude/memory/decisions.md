@@ -27,3 +27,15 @@
 ## ADR-007: Independent Maven project (not child of Grid's pom.xml)
 **Decision:** `aether-core/pom.xml` is a standalone parent POM, not a module of `aether-grid/pom.xml`.
 **Rationale:** Enables extraction to `suplab/aether-core` without any Maven refactoring. Each project builds and deploys independently.
+
+## ADR-008: One ACTIVE cognitive session per user per tenant
+**Decision:** A partial UNIQUE index (`(tenant_id, user_id) WHERE status = 'ACTIVE'`) enforces at most one active session. `JdbcCognitiveSessionStore.save()` closes prior active sessions before inserting a new active one.
+**Rationale:** "Active session" must be unambiguous for PersonalContext assembly — Grid needs exactly one live cognitive state per user, and the database enforces the invariant rather than relying on application discipline.
+
+## ADR-009: Session state overrides memory-derived state in PersonalContext
+**Decision:** When an ACTIVE session exists, its `emotionalState` and `engagementScore` override values derived from EMOTIONAL/EPISODIC memories; session turn summaries are prepended to memory summaries.
+**Rationale:** The live session is the freshest cognitive signal — a stored EMOTIONAL memory may be days old, while session turns reflect the current interaction.
+
+## ADR-010: JSONB for turn summaries and preferences
+**Decision:** `cognitive_sessions.turn_summaries` and `user_preferences.preferences` are JSONB columns serialised via Jackson, not normalised child tables.
+**Rationale:** Turns and preferences are always read/written as whole documents with the parent row — no per-turn queries exist. Avoids join overhead and keeps replace-on-save semantics trivial.

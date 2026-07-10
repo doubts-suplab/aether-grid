@@ -43,18 +43,18 @@
 
 ---
 
-## Phase 2 — Cognitive Session Management
+## Phase 2 — Cognitive Session Management ✅
 
 **Goal:** Multi-turn reasoning sessions persisted and retrievable. Session context included in `PersonalContext` response.
 
 | Deliverable | Status |
 |---|---|
-| `cognitive_sessions` Flyway migration (V003) | ⏳ |
-| `CognitiveSessionStore` port interface | ⏳ |
-| `JdbcCognitiveSessionStore` adapter | ⏳ |
-| `CognitiveSessionController` (POST create, GET by userId, PATCH add turn) | ⏳ |
-| `PersonalContext` enriched with active session's turn summaries | ⏳ |
-| User preferences table (V004) | ⏳ |
+| `cognitive_sessions` Flyway migration (V003) | ✅ |
+| `CognitiveSessionStore` port interface | ✅ |
+| `JdbcCognitiveSessionStore` adapter | ✅ |
+| `CognitiveSessionController` (POST create, GET by userId, PATCH add turn, POST close) | ✅ |
+| `PersonalContext` enriched with active session's turn summaries | ✅ |
+| User preferences table (V004) + `UserPreferenceStore` + GET/PUT endpoint | ✅ |
 
 ---
 

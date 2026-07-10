@@ -5,13 +5,13 @@
 
 ---
 
-**Active Phase:** Phase 2 — Cognitive Session Management
+**Active Phase:** Phase 3 — GDPR + Right to Erasure
 
 | Phase | Name | Status | Sessions |
 |---|---|---|---|
 | 0 | Scaffold | ✅ Complete | 1 |
 | 1 | Personal Memory Engine | ✅ Complete | 2 |
-| 2 | Cognitive Session Management | 🔄 In Progress | — |
+| 2 | Cognitive Session Management | ✅ Complete | 2 |
 | 3 | GDPR + Right to Erasure | ⏳ Planned | — |
 | 4 | Grid Feedback Loop (Kafka) | ⏳ Planned | — |
 | 5 | Memory Decay + Reinforcement Scheduler | ⏳ Planned | — |
@@ -120,3 +120,42 @@
 - `aether.core.context.memory-limit: ${CONTEXT_MEMORY_LIMIT:5}`
 
 ### Files changed: 9 | Tests added: 18 + 9 IT scenarios
+
+---
+
+## Phase 2 — Cognitive Session Management ✅
+
+**Commit:** `feat(core): Phase 2 — cognitive sessions, user preferences, session-enriched context`
+
+### What was done
+
+**Domain (`core-domain`):**
+- `SessionStatus` enum: ACTIVE | CLOSED
+- `CognitiveSession` extended with `status` field and behaviour:
+  - `start(tenantId, userId)` factory — new ACTIVE session, no turns
+  - `withTurn(summary, emotionalState, engagementScore)` — appends turn, updates state; throws `IllegalStateException` on closed sessions
+  - `close()` — idempotent transition to CLOSED
+- `CognitiveSessionStore` port: save, findById, findActive, findByUser
+- `UserPreferenceStore` port: find, save (replace semantics)
+
+**Migrations:**
+- `V003__create_cognitive_sessions.sql` — JSONB turn_summaries, partial UNIQUE index enforcing one ACTIVE session per (tenant, user)
+- `V004__create_user_preferences.sql` — one JSONB document per user
+
+**Adapters (`core-memory`):**
+- `JdbcCognitiveSessionStore` — JSONB serialisation via Jackson; saving an ACTIVE session closes the user's previous active session in the tenant
+- `JdbcUserPreferenceStore` — JSONB upsert, replace-on-save
+- `DefaultPersonalContextProvider` enriched: active session's emotionalState/engagementScore override memory-derived values; session turns prepended to summaries; preferences populated from store
+
+**API (`core-api`):**
+- `CognitiveSessionController` — POST create (closes prior active), GET list, GET by id, PATCH add turn (409 on closed session), POST close
+- `UserPreferenceController` — GET / PUT `/api/v1/users/{userId}/preferences`
+- `CoreApiConfig` — CognitiveSessionStore, UserPreferenceStore beans; context provider rewired with all three stores
+
+**Tests — 31 unit tests green:**
+- `CognitiveSessionTest` (9): start/withTurn/close semantics, closed-session guard, validation
+- `PersonalMemoryTest` (12): unchanged from Phase 1
+- `DefaultPersonalContextProviderTest` (10): session override, turn ordering, preferences, empty-context rules
+- ITs (CI, Testcontainers): `JdbcCognitiveSessionStoreIT` (7 scenarios — one-active enforcement, tenant coexistence, upsert, user scoping), `JdbcUserPreferenceStoreIT` (4 scenarios)
+
+### Files changed: 18

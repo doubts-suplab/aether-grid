@@ -34,6 +34,10 @@ cd ../.. && mvn spring-boot:run -pl core-api
 | `POST` | `/api/v1/users/{userId}/memories` | Store a new personal memory |
 | `GET` | `/api/v1/users/{userId}/memories/count` | Memory count for a user |
 | `DELETE` | `/api/v1/users/{userId}/memories/{memoryId}` | Delete a specific memory |
+| `POST` | `/api/v1/tenants/{tenantId}/users/{userId}/sessions` | Start a cognitive session (closes prior active) |
+| `PATCH` | `/api/v1/tenants/{tenantId}/users/{userId}/sessions/{sessionId}/turns` | Append a turn to a session |
+| `POST` | `/api/v1/tenants/{tenantId}/users/{userId}/sessions/{sessionId}/close` | Close a session |
+| `GET`/`PUT` | `/api/v1/users/{userId}/preferences` | Read / replace user preferences |
 | `GET` | `/actuator/health` | Liveness + readiness probes |
 
 ## Memory Types

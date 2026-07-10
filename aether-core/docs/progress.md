@@ -5,16 +5,17 @@
 
 ---
 
-**Active Phase:** Phase 3 — GDPR + Right to Erasure
+**Active Phase:** Phase 5 — Memory Decay + Reinforcement Scheduler
+> Phases 4 and 5 prioritised ahead of Phase 3 (GDPR) by explicit decision.
 
 | Phase | Name | Status | Sessions |
 |---|---|---|---|
 | 0 | Scaffold | ✅ Complete | 1 |
 | 1 | Personal Memory Engine | ✅ Complete | 2 |
 | 2 | Cognitive Session Management | ✅ Complete | 2 |
-| 3 | GDPR + Right to Erasure | ⏳ Planned | — |
-| 4 | Grid Feedback Loop (Kafka) | ⏳ Planned | — |
-| 5 | Memory Decay + Reinforcement Scheduler | ⏳ Planned | — |
+| 3 | GDPR + Right to Erasure | ⏳ Planned (deferred) | — |
+| 4 | Grid Feedback Loop (Kafka) | ✅ Complete | 3 |
+| 5 | Memory Decay + Reinforcement Scheduler | 🔄 In Progress | 3 |
 | 6 | Kubernetes + Helm | ⏳ Planned | — |
 
 ---
@@ -159,3 +160,36 @@
 - ITs (CI, Testcontainers): `JdbcCognitiveSessionStoreIT` (7 scenarios — one-active enforcement, tenant coexistence, upsert, user scoping), `JdbcUserPreferenceStoreIT` (4 scenarios)
 
 ### Files changed: 18
+
+---
+
+## Phase 4 — Grid Feedback Loop (Kafka) ✅
+
+**Commit:** `feat(core): Phase 4 — Kafka feedback loop, Grid decisions become personal memories`
+
+### What was done
+
+**Domain (`core-domain`):**
+- `DecisionOutcome` enum: CORRECT | INCORRECT | OVERRIDDEN
+- `AgentDecisionFeedback` record: tenantId, userId, agentType, decisionSummary, outcome, confidence, engagementSignal (negative = absent), occurredAt; `hasEngagementSignal()` helper
+
+**Processor (`core-memory`):**
+- `AgentDecisionFeedbackProcessor` — the learning half of the Grid ↔ Core loop:
+  - CORRECT → PROCEDURAL memory at full strength ("what worked for this user")
+  - INCORRECT/OVERRIDDEN → PROCEDURAL memory at 0.6 strength (fades unless pattern repeats)
+  - Engagement signal → EMOTIONAL memory: ENGAGED (≥0.66) / NEUTRAL (≥0.33) / DISENGAGED
+  - Embedding service optional — zero vectors when Ollama disabled
+
+**Kafka consumer (`core-api`):**
+- `GridFeedbackListener` — `@KafkaListener` on `aether.core.feedback` topic (configurable topic + group-id); flat-JSON contract, field-by-field parsing; malformed messages logged and skipped (never wedges the consumer group)
+- `GridFeedbackConfig` — `@ConditionalOnProperty(aether.core.feedback.enabled)`, **disabled by default** (Core runs standalone without Kafka)
+- `spring-kafka` dependency; `spring.kafka.*` consumer config in application.yml
+
+**Infrastructure:**
+- Docker Compose: `kafka-core` service (apache/kafka 3.8, KRaft single node, healthcheck); aether-core wired with `FEEDBACK_ENABLED=true` + `KAFKA_BOOTSTRAP_SERVERS`
+
+**Tests — 11 new, all green (42 total):**
+- `AgentDecisionFeedbackProcessorTest` (6): outcome→memory mapping, strength rules, engagement banding
+- `GridFeedbackListenerTest` (5): contract parsing, defaults, malformed/missing-field/unknown-outcome skip behaviour
+
+### Files changed: 10

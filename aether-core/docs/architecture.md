@@ -202,6 +202,44 @@ Response 200:
 
 ---
 
+## Grid Feedback Loop (Kafka)
+
+Grid publishes decision outcomes to the `aether.core.feedback` topic; Core turns them into personal memories.
+
+```
+Aether Grid ──publish──▶ Kafka topic: aether.core.feedback
+                              │
+                              ▼
+              GridFeedbackListener (core-api, @KafkaListener)
+                              │  flat JSON → AgentDecisionFeedback
+                              ▼
+              AgentDecisionFeedbackProcessor (core-memory)
+                    ├── CORRECT outcome      → PROCEDURAL memory (strength 1.0)
+                    ├── INCORRECT/OVERRIDDEN → PROCEDURAL memory (strength 0.6)
+                    └── engagementSignal     → EMOTIONAL memory
+                                               (ENGAGED ≥0.66 / NEUTRAL ≥0.33 / DISENGAGED)
+```
+
+**Message contract** (flat JSON — no shared DTO module, mirrors the REST approach):
+
+```json
+{
+  "tenantId": "acme-corp",
+  "userId": "user-42",
+  "agentType": "GovernanceAgent",
+  "decisionSummary": "Approved elevated API quota for analytics batch job",
+  "outcome": "CORRECT",
+  "confidence": 0.91,
+  "engagementSignal": 0.8,
+  "occurredAt": "2026-07-10T08:00:00Z"
+}
+```
+
+`engagementSignal` and `occurredAt` are optional. Malformed messages are logged and skipped.
+The consumer is **disabled by default** (`aether.core.feedback.enabled=false`) — Core must run standalone without Kafka or Grid present.
+
+---
+
 ## Aether Grid Integration
 
 Grid's `AetherCoreBridgeAgent` (in `suplab/aether-grid`) calls this endpoint before agent decisions. Configuration in Grid:

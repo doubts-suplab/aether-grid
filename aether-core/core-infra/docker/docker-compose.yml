@@ -15,6 +15,27 @@ services:
     volumes:
       - postgres-core-data:/var/lib/postgresql/data
 
+  kafka-core:
+    image: apache/kafka:3.8.0
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka-core:9093
+      KAFKA_LISTENERS: INTERNAL://kafka-core:9092,CONTROLLER://kafka-core:9093,EXTERNAL://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-core:9092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
   aether-core:
     build:
       context: ../..
@@ -26,9 +47,13 @@ services:
       POSTGRES_USER: aether
       POSTGRES_PASSWORD: aether
       OLLAMA_BASE_URL: http://host.docker.internal:11434
+      KAFKA_BOOTSTRAP_SERVERS: kafka-core:9092
+      FEEDBACK_ENABLED: "true"
       SPRING_PROFILES_ACTIVE: local
     depends_on:
       postgres-core:
+        condition: service_healthy
+      kafka-core:
         condition: service_healthy
 
 volumes:

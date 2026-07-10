@@ -60,6 +60,9 @@
 
 ## Phase 3 — GDPR + Privacy Controls
 
+> **Note:** Phases 4 and 5 were delivered before Phase 3 by explicit prioritisation.
+> This phase takes migration **V006** (V005 was consumed by the Phase 5 archive table).
+
 **Goal:** Full right-to-erasure, data retention configuration, and memory export.
 
 | Deliverable | Status |
@@ -69,21 +72,21 @@
 | `data_retention_days` per user configurable | ⏳ |
 | Memory export: `GET /api/v1/users/{userId}/export` (JSON) | ⏳ |
 | Audit log for erasure events | ⏳ |
-| V005 migration: user_privacy_settings table | ⏳ |
+| V006 migration: user_privacy_settings table | ⏳ |
 
 ---
 
-## Phase 4 — Grid Feedback Loop (Kafka)
+## Phase 4 — Grid Feedback Loop (Kafka) ✅
 
 **Goal:** Aether Core consumes Grid decision feedback to improve personal context relevance.
 
 | Deliverable | Status |
 |---|---|
-| Kafka consumer for `aether.core.feedback` topic | ⏳ |
-| `AgentDecisionFeedbackProcessor`: maps Grid outcomes to memory reinforcement/creation | ⏳ |
-| `PROCEDURAL` memory auto-created from correct Grid decisions | ⏳ |
-| `EMOTIONAL` memory updated from engagement signals | ⏳ |
-| Docker Compose Kafka service added | ⏳ |
+| Kafka consumer for `aether.core.feedback` topic | ✅ |
+| `AgentDecisionFeedbackProcessor`: maps Grid outcomes to memory reinforcement/creation | ✅ |
+| `PROCEDURAL` memory auto-created from correct Grid decisions | ✅ |
+| `EMOTIONAL` memory updated from engagement signals | ✅ |
+| Docker Compose Kafka service added | ✅ |
 
 ---
 

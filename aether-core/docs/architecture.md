@@ -53,12 +53,15 @@ com.suplab.aether.core.domain
                           start() factory · withTurn() appends + updates state · close()
   SessionStatus         — enum: ACTIVE | CLOSED (one ACTIVE per user per tenant)
   PersonalContext       — record: assembled snapshot served to Grid
+  AgentDecisionFeedback — record: Grid decision feedback from Kafka
+  DecisionOutcome       — enum: CORRECT | INCORRECT | OVERRIDDEN
 
 com.suplab.aether.core.ports
   PersonalMemoryStore     — driven port: save, findSimilar, findByType, delete, countByUser
   PersonalContextProvider — driven port: buildContext(tenantId, userId)
   CognitiveSessionStore   — driven port: save, findById, findActive, findByUser
   UserPreferenceStore     — driven port: find, save (replace semantics)
+  MemoryLifecyclePort     — driven port: runLifecycle() → LifecycleResult
 ```
 
 ### `core-memory` — Persistence Adapters
@@ -90,6 +93,16 @@ com.suplab.aether.core.memory.preference
   JdbcUserPreferenceStore  — implements UserPreferenceStore
     • One JSONB document per user, replace-on-save semantics
 
+com.suplab.aether.core.memory.feedback
+  AgentDecisionFeedbackProcessor  — turns Grid decision feedback into memories
+    • CORRECT → PROCEDURAL (strength 1.0) · INCORRECT/OVERRIDDEN → PROCEDURAL (0.6)
+    • engagementSignal → EMOTIONAL (ENGAGED / NEUTRAL / DISENGAGED)
+
+com.suplab.aether.core.memory.lifecycle
+  JdbcMemoryLifecycleService  — implements MemoryLifecyclePort
+    • Set-based decay: strength -= decay_rate × days_since_access (grace period 7d)
+    • Atomic archive via data-modifying CTE (DELETE … RETURNING → INSERT)
+
 com.suplab.aether.core.memory.embedding
   PersonalEmbeddingService  — Ollama RestClient adapter
     • embed(text) → float[384]
@@ -112,6 +125,14 @@ com.suplab.aether.core.api.controller
                                 POST create · GET list · GET {sessionId}
                                 PATCH {sessionId}/turns · POST {sessionId}/close
   UserPreferenceController    — GET/PUT /api/v1/users/{userId}/preferences
+
+com.suplab.aether.core.api.feedback
+  GridFeedbackListener  — @KafkaListener on aether.core.feedback (opt-in)
+  GridFeedbackConfig    — @ConditionalOnProperty(aether.core.feedback.enabled)
+
+com.suplab.aether.core.api.lifecycle
+  MemoryDecayScheduler   — @Scheduled decay job (default 03:00 daily) + Micrometer metrics
+  MemoryLifecycleConfig  — @EnableScheduling, decay-enabled default true
 
 com.suplab.aether.core.api.config
   CoreApiConfig  — @Bean wiring: PersonalMemoryStore, CognitiveSessionStore,
@@ -170,6 +191,12 @@ Docker Compose for local dev, standalone Flyway migrations.
 | `user_id` | `TEXT` | PK |
 | `preferences` | `JSONB` | Free-form key/value document, replace-on-save |
 | `updated_at` | `TIMESTAMPTZ` | Updated on save |
+
+### `personal_memories_archive` table (V005)
+
+Same columns as `personal_memories` (embedding retained for potential restore) plus `archived_at TIMESTAMPTZ`. Faded memories (`strength < 0.1` after decay) are **moved** here by the nightly lifecycle job — never silently deleted. Indexed on `(user_id, archived_at DESC)`.
+
+**Memory lifecycle:** retrieval reinforces (`+0.1` strength per read); the scheduler decays memories not accessed for 7+ days at `0.01 × days_since_access` per run and archives what falls below the threshold. All rates configurable under `aether.core.memory.*`.
 
 ---
 

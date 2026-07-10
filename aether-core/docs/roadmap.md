@@ -90,17 +90,17 @@
 
 ---
 
-## Phase 5 — Memory Decay + Reinforcement Scheduler
+## Phase 5 — Memory Decay + Reinforcement Scheduler ✅
 
 **Goal:** Memory strength evolves over time — unused memories decay, accessed memories reinforce.
 
 | Deliverable | Status |
 |---|---|
-| `@Scheduled` decay job: `strength -= 0.01 * days_since_access` for memories older than 7 days | ⏳ |
-| Configurable decay rate (`aether.core.memory.decay-rate`) | ⏳ |
-| Memories below `strength < 0.1` archived (not deleted) | ⏳ |
-| Memory archive table (V006 migration) | ⏳ |
-| Micrometer metrics: `aether.core.memories.total`, `aether.core.memories.decayed` | ⏳ |
+| `@Scheduled` decay job: `strength -= 0.01 * days_since_access` for memories older than 7 days | ✅ |
+| Configurable decay rate (`aether.core.memory.decay-rate`) | ✅ |
+| Memories below `strength < 0.1` archived (not deleted) | ✅ |
+| Memory archive table (V005 migration) | ✅ |
+| Micrometer metrics: `aether.core.memories.total`, `.decayed`, `.archived` | ✅ |
 
 ---
 

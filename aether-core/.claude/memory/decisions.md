@@ -39,3 +39,15 @@
 ## ADR-010: JSONB for turn summaries and preferences
 **Decision:** `cognitive_sessions.turn_summaries` and `user_preferences.preferences` are JSONB columns serialised via Jackson, not normalised child tables.
 **Rationale:** Turns and preferences are always read/written as whole documents with the parent row — no per-turn queries exist. Avoids join overhead and keeps replace-on-save semantics trivial.
+
+## ADR-011: Phases 4 and 5 delivered before Phase 3 (GDPR)
+**Decision:** Grid Feedback Loop (Kafka) and Memory Decay Scheduler shipped ahead of GDPR controls, by explicit prioritisation. Phase 3 takes migration V006 (V005 consumed by the archive table).
+**Rationale:** The learning loop and lifecycle are Core's differentiating behaviours; GDPR endpoints are additive and don't affect the schema built so far.
+
+## ADR-012: Kafka feedback consumer disabled by default
+**Decision:** `GridFeedbackConfig` is `@ConditionalOnProperty(aether.core.feedback.enabled)` with no `matchIfMissing` — the consumer only starts when explicitly enabled.
+**Rationale:** Core must run standalone without Kafka or Grid present (same principle as the optional embedding service). Docker Compose enables it because Kafka ships in the stack.
+
+## ADR-013: Archive via data-modifying CTE, never DELETE-only
+**Decision:** Faded memories are moved to `personal_memories_archive` with a single `WITH moved AS (DELETE … RETURNING …) INSERT …` statement.
+**Rationale:** Atomicity without a transaction manager dependency — a memory can never be deleted without landing in the archive. Forgetting is graceful and reversible; embeddings are retained for potential restore.

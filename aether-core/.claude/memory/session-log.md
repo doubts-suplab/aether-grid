@@ -40,3 +40,21 @@
 **Next session:** Phase 3 — GDPR + Right to Erasure
 - DELETE /api/v1/users/{userId}/memories (erase all) and DELETE /api/v1/users/{userId} (full erasure)
 - Memory export endpoint, data_retention_days, erasure audit log, V005 user_privacy_settings
+
+---
+
+## Session: 2026-07-10 (cont.) — Phases 4 + 5 complete (Phase 3 deferred)
+
+**Phase 4 (Grid Feedback Loop):**
+- AgentDecisionFeedback + DecisionOutcome domain types; AgentDecisionFeedbackProcessor (CORRECT→PROCEDURAL@1.0, INCORRECT/OVERRIDDEN→PROCEDURAL@0.6, engagement→EMOTIONAL banding)
+- GridFeedbackListener (@KafkaListener, flat JSON, skip-on-malformed) behind aether.core.feedback.enabled (default false)
+- Docker Compose kafka-core (apache/kafka 3.8 KRaft)
+
+**Phase 5 (Memory Decay Scheduler):**
+- MemoryLifecyclePort + JdbcMemoryLifecycleService (set-based decay, atomic CTE archive)
+- V005 personal_memories_archive; MemoryDecayScheduler (cron 03:00, Micrometer counters + gauge)
+- Config: aether.core.memory.{decay-enabled,decay-rate,decay-after-days,archive-threshold,decay-cron}
+
+**Tests:** 44 unit green; ITs for lifecycle (6), sessions (7), preferences (4), memory store (8) run in CI.
+
+**Next session:** Phase 3 — GDPR + Right to Erasure (V006 user_privacy_settings; erase-all, account erasure, export, retention, audit log). Then Phase 6 — Kubernetes + Helm.

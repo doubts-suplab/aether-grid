@@ -5,8 +5,8 @@
 
 ---
 
-**Active Phase:** Phase 5 — Memory Decay + Reinforcement Scheduler
-> Phases 4 and 5 prioritised ahead of Phase 3 (GDPR) by explicit decision.
+**Active Phase:** Phase 3 — GDPR + Right to Erasure (returning after 4/5 prioritisation)
+> Phases 4 and 5 were prioritised ahead of Phase 3 (GDPR) by explicit decision.
 
 | Phase | Name | Status | Sessions |
 |---|---|---|---|
@@ -15,7 +15,7 @@
 | 2 | Cognitive Session Management | ✅ Complete | 2 |
 | 3 | GDPR + Right to Erasure | ⏳ Planned (deferred) | — |
 | 4 | Grid Feedback Loop (Kafka) | ✅ Complete | 3 |
-| 5 | Memory Decay + Reinforcement Scheduler | 🔄 In Progress | 3 |
+| 5 | Memory Decay + Reinforcement Scheduler | ✅ Complete | 3 |
 | 6 | Kubernetes + Helm | ⏳ Planned | — |
 
 ---
@@ -193,3 +193,35 @@
 - `GridFeedbackListenerTest` (5): contract parsing, defaults, malformed/missing-field/unknown-outcome skip behaviour
 
 ### Files changed: 10
+
+---
+
+## Phase 5 — Memory Decay + Reinforcement Scheduler ✅
+
+**Commit:** `feat(core): Phase 5 — memory decay scheduler with archive and lifecycle metrics`
+
+### What was done
+
+**Port (`core-domain`):**
+- `MemoryLifecyclePort` — `runLifecycle()` returning `LifecycleResult(decayedCount, archivedCount, totalRemaining)`
+
+**Migration:**
+- `V005__create_personal_memories_archive.sql` — archive keeps all columns including the 384-dim embedding (restore-friendly), plus `archived_at`; indexed on `(user_id, archived_at DESC)`
+
+**Service (`core-memory`):**
+- `JdbcMemoryLifecycleService` — fully set-based, two SQL statements per run:
+  - Decay: `strength = GREATEST(0, strength - decay_rate × days_since_access)` for memories outside the grace period (`make_interval(days => :decayAfterDays)`)
+  - Archive: data-modifying CTE (`WITH moved AS (DELETE … RETURNING …) INSERT …`) — atomic move, a memory can never be deleted without landing in the archive
+
+**Scheduler (`core-api`):**
+- `MemoryDecayScheduler` — `@Scheduled` (default cron 03:00 daily), Micrometer metrics:
+  - `aether.core.memories.decayed` / `.archived` counters (accumulate across runs)
+  - `aether.core.memories.total` gauge (active memories after last run)
+- `MemoryLifecycleConfig` — `@EnableScheduling`, enabled by default, `aether.core.memory.decay-enabled=false` to opt out
+- Config keys: `decay-rate` (0.01/day), `decay-after-days` (7), `archive-threshold` (0.1), `decay-cron`
+
+**Tests — 2 new unit + 6 IT scenarios (44 unit total green):**
+- `MemoryDecaySchedulerTest` (2): delegation + metric recording, counter accumulation vs gauge latest-value
+- `JdbcMemoryLifecycleServiceIT` (6, Testcontainers/CI): decay math, grace period, archive move, decay-then-archive same run, strength floor at 0, totalRemaining accuracy
+
+### Files changed: 9

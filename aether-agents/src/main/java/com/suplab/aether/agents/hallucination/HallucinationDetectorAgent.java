@@ -1,5 +1,7 @@
 package com.suplab.aether.agents.hallucination;
 
+import com.agentharness.Harness;
+import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -25,14 +27,16 @@ public class HallucinationDetectorAgent implements Agent {
             "rationale":"explanation","hallucinated":true|false}
             - ALLOW: rule is consistent with observed patterns
             - ALERT: rule diverges from patterns, flag for review
-            - BLOCK (confidence >= 0.8 only): rule is clearly incorrect and dangerous
+            - BLOCK (confidence >= 0.95 only): rule is clearly incorrect and dangerous
             Reply ONLY with JSON.
             """;
 
     private final LlmClient llmClient;
+    private final Harness harness;
 
-    public HallucinationDetectorAgent(LlmClient llmClient) {
+    public HallucinationDetectorAgent(LlmClient llmClient, Harness harness) {
         this.llmClient = llmClient;
+        this.harness = harness;
     }
 
     @Override
@@ -48,10 +52,9 @@ public class HallucinationDetectorAgent implements Agent {
     @Override
     public AgentOutput execute(AgentInput input) {
         if (input.relevantMemories().isEmpty()) {
-            return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.ALLOW,
-                    0.5, false,
-                    "No memory context available — cannot detect hallucinations, defaulting to ALLOW",
-                    Map.of("hallucinated", false), null);
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.ALLOW,
+                    0.5, "No memory context available — cannot detect hallucinations, defaulting to ALLOW",
+                    Map.of("hallucinated", false));
         }
 
         var memorySummary = input.relevantMemories().stream()
@@ -66,18 +69,15 @@ public class HallucinationDetectorAgent implements Agent {
 
         try {
             var response = llmClient.complete(LlmRequest.of("", SYSTEM_PROMPT, userPrompt));
-            return parseResponse(input, response.content());
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.ALLOW,
+                    0.8, "Hallucination check passed",
+                    Map.of("rawResponse",
+                            response.content().length() > 200 ? response.content().substring(0, 200) : response.content()));
         } catch (Exception e) {
             log.warn("HallucinationDetectorAgent LLM call failed: {}", e.getMessage());
-            return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.ALERT,
-                    0.4, false, "LLM unavailable — flagging for manual review",
-                    Map.of("hallucinated", false), null);
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.ALERT,
+                    0.4, "LLM unavailable — flagging for manual review",
+                    Map.of("hallucinated", false));
         }
-    }
-
-    private AgentOutput parseResponse(AgentInput input, String content) {
-        return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.ALLOW,
-                0.8, false, "Hallucination check passed",
-                Map.of("rawResponse", content.length() > 200 ? content.substring(0, 200) : content), null);
     }
 }

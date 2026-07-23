@@ -1,5 +1,6 @@
 package com.suplab.aether.agents.bridge;
 
+import com.suplab.aether.agents.harness.HarnessSupport;
 import com.suplab.aether.agents.spi.AgentCapability;
 import com.suplab.aether.agents.spi.AgentDecision;
 import com.suplab.aether.agents.spi.AgentInput;
@@ -25,7 +26,7 @@ import static org.mockito.Mockito.when;
 class AetherCoreBridgeAgentTest {
 
     private final PersonalContextPort port = mock(PersonalContextPort.class);
-    private final AetherCoreBridgeAgent agent = new AetherCoreBridgeAgent(port);
+    private final AetherCoreBridgeAgent agent = new AetherCoreBridgeAgent(port, HarnessSupport.governanceHarness());
 
     private static final TenantId TENANT_ID = TenantId.generate();
     private static final ApiCallId CALL_ID = ApiCallId.generate();

@@ -1,5 +1,6 @@
 package com.suplab.aether.agents.temporal;
 
+import com.suplab.aether.agents.harness.HarnessSupport;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmProvider;
 import com.suplab.aether.agents.llm.LlmResponse;
@@ -35,7 +36,7 @@ class TemporalPredictionAgentTest {
 
     @BeforeEach
     void setUp() {
-        agent = new TemporalPredictionAgent(llmClient);
+        agent = new TemporalPredictionAgent(llmClient, HarnessSupport.governanceHarness());
     }
 
     @Test

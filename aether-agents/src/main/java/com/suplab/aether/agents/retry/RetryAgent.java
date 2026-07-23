@@ -1,5 +1,7 @@
 package com.suplab.aether.agents.retry;
 
+import com.agentharness.Harness;
+import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -29,9 +31,11 @@ public class RetryAgent implements Agent {
             """;
 
     private final LlmClient llmClient;
+    private final Harness harness;
 
-    public RetryAgent(LlmClient llmClient) {
+    public RetryAgent(LlmClient llmClient, Harness harness) {
         this.llmClient = llmClient;
+        this.harness = harness;
     }
 
     @Override
@@ -48,9 +52,9 @@ public class RetryAgent implements Agent {
     public AgentOutput execute(AgentInput input) {
         var failureCount = countRecentFailures(input);
         if (failureCount == 0) {
-            return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.ALLOW,
-                    0.95, false, "No recent failures detected — no retry strategy needed",
-                    Map.of("failureCount", 0), null);
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.ALLOW,
+                    0.95, "No recent failures detected — no retry strategy needed",
+                    Map.of("failureCount", 0));
         }
 
         var userPrompt = String.format(
@@ -61,12 +65,14 @@ public class RetryAgent implements Agent {
 
         try {
             var response = llmClient.complete(request);
-            return buildOutput(input, response.content(), failureCount);
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.SUGGEST,
+                    0.75, "Retry strategy derived from " + failureCount + " historical failures",
+                    Map.of("rawLlmResponse", response.content(), "failureCount", failureCount));
         } catch (Exception e) {
             log.warn("RetryAgent LLM call failed: {}", e.getMessage());
-            return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.SUGGEST,
-                    0.5, false, "LLM unavailable — suggesting exponential backoff default",
-                    Map.of("retryAfterMs", 1000, "maxRetries", 3), null);
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.SUGGEST,
+                    0.5, "LLM unavailable — suggesting exponential backoff default",
+                    Map.of("retryAfterMs", 1000, "maxRetries", 3));
         }
     }
 
@@ -74,12 +80,5 @@ public class RetryAgent implements Agent {
         return (int) input.relevantMemories().stream()
                 .filter(m -> m.content().contains("FAILURE") || m.content().contains("TIMEOUT"))
                 .count();
-    }
-
-    private AgentOutput buildOutput(AgentInput input, String content, int failureCount) {
-        return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.SUGGEST,
-                0.75, false,
-                "Retry strategy derived from " + failureCount + " historical failures",
-                Map.of("rawLlmResponse", content, "failureCount", failureCount), null);
     }
 }

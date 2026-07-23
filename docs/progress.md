@@ -12,6 +12,24 @@
 ## Current Status
 
 **Active Phase:** Phase 17 — Aether Core Scaffold (sister repo bootstrap) 🔄 In Progress. Phases 0–16 complete.
+
+### Agent runtime — consumes the generic agent-harness ✅
+`aether-agents` now depends on the [`agent-harness`](https://github.com/doubts-suplab/agent-harness) Java
+binding (`com.agentharness:agent-harness-java`). The confidence gate is **centralized** in
+`HarnessConfidenceGate` (delegating to the harness `ConfidenceGate`) — the former flat `0.8` literal that was
+duplicated in `AgentOutput`, `GovernanceAgent`, and `TemporalPredictionAgent` is gone. A `BLOCK` now
+auto-enforces at confidence **≥ 0.95** (AIEL authority ladder).
+
+- **All seven agents route through `Harness.invoke`** — `GovernanceAgent` directly, and the other six
+  (`Retry`, `Hallucination`, `Temporal`, `Reflection`, `SelfImproving`, `AetherCoreBridge`) via the shared
+  `HarnessRouting.gate(...)` helper, which gates each proposed decision while preserving the agent's metadata.
+- **Tool registry wired** (`ToolRegistry` bean → shared `Harness`) — the governance boundary for agent tools:
+  **default-deny**, no wildcards, refusals become safe failure defaults + security events. A demonstrative
+  read-only `policy_lookup` tool is registered and granted only to `GovernanceAgent`.
+- **41 `aether-agents` tests green** (incl. `HarnessConfidenceGateTest`, `GridToolRegistryTest`).
+
+The binding is resolved from the local Maven repo via `mvn install`; publishing to a shared registry is
+tracked separately.
 **Branch:** `claude/enterprise-app-planning-setup-whtxmu`
 **Last Updated:** 2026-06-15
 

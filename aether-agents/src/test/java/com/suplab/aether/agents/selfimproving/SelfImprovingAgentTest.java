@@ -1,5 +1,6 @@
 package com.suplab.aether.agents.selfimproving;
 
+import com.suplab.aether.agents.harness.HarnessSupport;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmProvider;
 import com.suplab.aether.agents.llm.LlmResponse;
@@ -44,7 +45,7 @@ class SelfImprovingAgentTest {
 
     @BeforeEach
     void setUp() {
-        agent = new SelfImprovingAgent(llmClient, feedbackPort);
+        agent = new SelfImprovingAgent(llmClient, feedbackPort, HarnessSupport.governanceHarness());
     }
 
     @Test

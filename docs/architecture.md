@@ -268,7 +268,7 @@ agent_decisions
   capability VARCHAR
   decision VARCHAR           -- ALLOW | BLOCK | ALERT | SUGGEST | DEFER
   confidence FLOAT
-  auto_enforced BOOLEAN      -- false when confidence < 0.8
+  auto_enforced BOOLEAN      -- false unless BLOCK with confidence >= 0.95 (agent-harness gate)
   rationale TEXT
   decided_at TIMESTAMP
 
@@ -384,10 +384,12 @@ For each agent (parallel via VirtualThreadPerTaskExecutor):
   Micrometer: aether.agent.executions counter (agent, decision tags)
   Micrometer: aether.agent.latency timer (agent tag)
 
-  Confidence gate (enforced in AgentOutput compact constructor):
-    If decision == BLOCK and confidence < 0.8:
+  Confidence gate (centralized in the agent-harness ConfidenceGate; single source of truth):
+    A BLOCK auto-enforces only at confidence >= 0.95 (AIEL authority ladder), else:
       autoEnforced = false  → human-in-the-loop required
       Decision is recorded but NOT automatically enforced
+    GovernanceAgent runs through Harness.invoke; AgentOutput delegates the same gate.
+    (Supersedes Grid's former flat 0.8 literal; the gate lives in ONE place — see HarnessConfidenceGate.)
 
   Persist AgentDecision to agent_decisions table
   Publish AgentDecisionEvent to Kafka
@@ -718,7 +720,7 @@ The `agent_feedback` table mirrors the record above. Row-level security uses `cu
 4. Parses the LLM response into improvement suggestions
 5. Returns the suggestions as a `SUGGEST` decision with a rationale string
 
-The confidence gate still applies: a `BLOCK` suggestion from this agent with confidence < 0.8 requires human review. `SUGGEST` decisions are informational and never auto-enforced.
+The confidence gate still applies: a `BLOCK` suggestion from this agent auto-enforces only at confidence ≥ 0.95 (the centralized agent-harness gate); anything lower requires human review. `SUGGEST` decisions are informational and never auto-enforced.
 
 ### AgentLearningService (`aether-api`)
 

@@ -24,7 +24,7 @@ Aether Grid is implemented as a **Maven multi-module Spring Boot 3.x / Java 21**
 - **Coordinates** six specialized agents across a cognitive mesh with shared pgvector memory
 - **Provides visibility**: live dark-theme operator dashboard at `http://localhost:8081/dashboard.html` — stat cards, agent registry, memory breakdown, decision history, SSE live stream
 - **Protects PII** via `GdprRedactionService` (email, phone, cards, SSN, JWT, API keys) before any persistence
-- **Enforces confidence gates**: agents with confidence < 0.8 on BLOCK decisions require human-in-the-loop
+- **Enforces confidence gates**: the centralized [agent-harness](https://github.com/doubts-suplab/agent-harness) `ConfidenceGate` auto-enforces a `BLOCK` only at confidence ≥ 0.95; anything lower requires human-in-the-loop
 
 > **Sister repository:** [Aether Core](https://github.com/suplab/aether-core) (`suplab/aether-core`) — the personal cognitive engine. Aether Grid integrates with Core via `PersonalContextPort` to enrich agent decisions with individual user context.
 
@@ -202,7 +202,7 @@ aether-grid/
 
 | Agent | Capability | Built | Role |
 |---|---|---|---|
-| **GovernanceAgent** | `GOVERNANCE` | Phase 7 | LLM JSON response protocol; ALLOW/BLOCK/ALERT decisions; confidence < 0.8 = human-in-the-loop |
+| **GovernanceAgent** | `GOVERNANCE` | Phase 7 | LLM JSON response protocol; ALLOW/BLOCK/ALERT decisions; runs on the agent-harness — BLOCK auto-enforces at ≥ 0.95, else human-in-the-loop |
 | **RetryAgent** | `RETRY_OPTIMIZATION` | Phase 7 | Counts failure/timeout memories; suggests exponential backoff; fast-path for zero-failure calls |
 | **HallucinationDetectorAgent** | `HALLUCINATION_DETECTION` | Phase 7 | Validates LLM outputs against stored memory patterns; defaults ALERT when LLM unavailable |
 | **TemporalPredictionAgent** | `TEMPORAL_PREDICTION` | Phase 10 | Analyses EPISODIC/SEMANTIC memory counts; LLM ALERT/DEFER predictions; fast-path DEFER for zero memories |
@@ -250,7 +250,7 @@ All agents implement the `Agent` SPI and are auto-discovered via `AgentRegistry`
 
 | Risk | Mitigation |
 |---|---|
-| Agent hallucination | Confidence gate: < 0.8 → human-in-the-loop; HallucinationDetectorAgent validates all outputs |
+| Agent hallucination | Confidence gate (agent-harness): BLOCK auto-enforces only at ≥ 0.95 → else human-in-the-loop; HallucinationDetectorAgent validates all outputs |
 | Data growth | Monthly `MemoryCompactionJob` summarises old memories; pgvector index pruning |
 | Latency | Policy checks async; blocking only on high-confidence enforcement |
 | Privacy / GDPR | `GdprRedactionService` strips PII before any persistence; opt-out and erasure endpoints |

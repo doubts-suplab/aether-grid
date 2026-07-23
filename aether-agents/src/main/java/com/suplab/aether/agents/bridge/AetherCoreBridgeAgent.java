@@ -1,5 +1,7 @@
 package com.suplab.aether.agents.bridge;
 
+import com.agentharness.Harness;
+import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.spi.Agent;
 import com.suplab.aether.agents.spi.AgentCapability;
 import com.suplab.aether.agents.spi.AgentDecision;
@@ -19,9 +21,11 @@ public class AetherCoreBridgeAgent implements Agent {
     private static final String AGENT_TYPE = "AetherCoreBridgeAgent";
 
     private final PersonalContextPort personalContextPort;
+    private final Harness harness;
 
-    public AetherCoreBridgeAgent(PersonalContextPort personalContextPort) {
+    public AetherCoreBridgeAgent(PersonalContextPort personalContextPort, Harness harness) {
         this.personalContextPort = personalContextPort;
+        this.harness = harness;
     }
 
     @Override
@@ -38,7 +42,7 @@ public class AetherCoreBridgeAgent implements Agent {
     public AgentOutput execute(AgentInput input) {
         var rawUserId = input.context().get("userId");
         if (rawUserId == null || rawUserId.toString().isBlank()) {
-            return allow(input, 0.5, "no userId in context — personal enrichment skipped", Map.of(), false);
+            return allow(input, 0.5, "no userId in context — personal enrichment skipped", Map.of());
         }
 
         var userId = rawUserId.toString();
@@ -47,7 +51,7 @@ public class AetherCoreBridgeAgent implements Agent {
             var result = personalContextPort.fetchFor(input.tenantId(), userId);
 
             if (result.isEmpty()) {
-                return allow(input, 0.6, "no personal context available for user", Map.of(), false);
+                return allow(input, 0.6, "no personal context available for user", Map.of());
             }
 
             var ctx = result.get();
@@ -61,20 +65,16 @@ public class AetherCoreBridgeAgent implements Agent {
             log.info("AetherCoreBridgeAgent: enriched context for tenant={} user={}",
                     input.tenantId(), userId);
 
-            return allow(input, 0.9, "personal context enriched", Map.copyOf(metadata), true);
+            return allow(input, 0.9, "personal context enriched", Map.copyOf(metadata));
 
         } catch (Exception e) {
             log.warn("AetherCoreBridgeAgent: enrichment failed for tenant={} user={}: {}",
                     input.tenantId(), userId, e.getMessage());
-            return allow(input, 0.5, "personal context enrichment unavailable", Map.of(), false);
+            return allow(input, 0.5, "personal context enrichment unavailable", Map.of());
         }
     }
 
-    private AgentOutput allow(AgentInput input, double confidence, String rationale,
-                              Map<String, Object> metadata, boolean autoEnforced) {
-        return new AgentOutput(
-                input.callId(), AGENT_TYPE, AgentDecision.ALLOW,
-                confidence, autoEnforced, rationale, metadata, null
-        );
+    private AgentOutput allow(AgentInput input, double confidence, String rationale, Map<String, Object> metadata) {
+        return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.ALLOW, confidence, rationale, metadata);
     }
 }

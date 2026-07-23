@@ -4,6 +4,20 @@ Lightweight log of key decisions. Full ADRs are in `docs/adr/`.
 
 ---
 
+## D-0NN — Consume the generic agent-harness; centralize the confidence gate
+**Date:** 2026-07-23
+**Status:** Accepted
+**Decision:** `aether-agents` depends on the generic `agent-harness` Java binding rather than hand-rolling
+agent execution. The confidence gate is centralized in `HarnessConfidenceGate` (delegating to the harness
+`ConfidenceGate`); the duplicated `0.8` literal in `AgentOutput`/`GovernanceAgent`/`TemporalPredictionAgent`
+is removed. `GovernanceAgent` routes through `Harness.invoke`.
+**Rationale:** One testable gate, impossible for an agent to bypass; aligns Grid with the ecosystem-wide
+harness protocol (AIEL authority ladder → BLOCK auto-enforces at ≥ 0.95, superseding the former flat 0.8).
+**Trade-off:** BLOCK auto-enforcement threshold tightens from 0.8 to 0.95 (more human review). The binding is
+resolved from the local Maven repo until a shared registry is configured. Remaining agents migrate incrementally.
+
+---
+
 ## D-001 — Spring Cloud Gateway over custom Netty proxy
 **Date:** 2026-06-14  
 **Status:** Accepted  

@@ -26,8 +26,8 @@
         </dependency>
 
         <!-- Generic agent runtime — the harness owns the confidence gate, tool registry, and
-             decision envelope. Published to the local Maven repo via `mvn install` in
-             agent-harness/java until a shared registry is configured. See ADR-0009 there. -->
+             decision envelope. Published to GitHub Packages by agent-harness (see the github repository
+             below); available locally via `mvn install` in agent-harness/java. See ADR-0009 there. -->
         <dependency>
             <groupId>com.agentharness</groupId>
             <artifactId>agent-harness-java</artifactId>
@@ -79,6 +79,18 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!-- Resolve the agent-harness Java binding from GitHub Packages. Requires a Maven server entry
+         with id 'github-agent-harness' and a token with read:packages (CI: settings.xml). When the
+         artifact is present in the local repo (mvn install), this remote is not queried. -->
+    <repositories>
+        <repository>
+            <id>github-agent-harness</id>
+            <url>https://maven.pkg.github.com/doubts-suplab/agent-harness</url>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>

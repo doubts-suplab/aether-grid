@@ -25,6 +25,15 @@
             <artifactId>aether-memory</artifactId>
         </dependency>
 
+        <!-- Generic agent runtime — the harness owns the confidence gate, tool registry, and
+             decision envelope. Published to the local Maven repo via `mvn install` in
+             agent-harness/java until a shared registry is configured. See ADR-0009 there. -->
+        <dependency>
+            <groupId>com.agentharness</groupId>
+            <artifactId>agent-harness-java</artifactId>
+            <version>0.1.0</version>
+        </dependency>
+
         <!-- Spring context -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

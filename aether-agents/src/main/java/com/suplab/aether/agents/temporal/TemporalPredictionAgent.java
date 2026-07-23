@@ -109,7 +109,8 @@ public class TemporalPredictionAgent implements Agent {
             var rationale = extractStringValue(json, "rationale");
             return new AgentOutput(
                     input.callId(), AGENT_TYPE, decision, confidence,
-                    decision == AgentDecision.BLOCK && confidence >= 0.8,
+                    // Intent to enforce a block; the centralized gate in AgentOutput sets the threshold.
+                    decision == AgentDecision.BLOCK,
                     rationale, Map.of("provider", llmClient.provider().name()), null
             );
         } catch (Exception e) {

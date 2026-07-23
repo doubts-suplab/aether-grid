@@ -12,6 +12,15 @@
 ## Current Status
 
 **Active Phase:** Phase 17 — Aether Core Scaffold (sister repo bootstrap) 🔄 In Progress. Phases 0–16 complete.
+
+### Agent runtime — consumes the generic agent-harness ✅
+`aether-agents` now depends on the [`agent-harness`](https://github.com/doubts-suplab/agent-harness) Java
+binding (`com.agentharness:agent-harness-java`). The confidence gate is **centralized** in
+`HarnessConfidenceGate` (delegating to the harness `ConfidenceGate`) — the former flat `0.8` literal that was
+duplicated in `AgentOutput`, `GovernanceAgent`, and `TemporalPredictionAgent` is gone. A `BLOCK` now
+auto-enforces at confidence **≥ 0.95** (AIEL authority ladder). `GovernanceAgent` is the first agent routed
+through `Harness.invoke`. All 39 `aether-agents` tests green. (The binding is resolved from the local Maven
+repo via `mvn install`; a shared registry is a follow-up. Remaining agents can migrate incrementally.)
 **Branch:** `claude/enterprise-app-planning-setup-whtxmu`
 **Last Updated:** 2026-06-15
 

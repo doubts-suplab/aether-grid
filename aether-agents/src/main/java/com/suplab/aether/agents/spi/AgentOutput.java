@@ -24,8 +24,9 @@ public record AgentOutput(
         if (metadata == null) metadata = Map.of();
         if (decidedAt == null) decidedAt = Instant.now();
 
-        // Confidence gate: never auto-enforce a blocking decision below threshold
-        if (decision == AgentDecision.BLOCK && confidence < 0.8) {
+        // Confidence gate (centralized in the agent-harness ConfidenceGate): an agent may only KEEP
+        // autoEnforced when the gate agrees. Grid auto-enforces BLOCK at confidence >= 0.95.
+        if (!HarnessConfidenceGate.autoEnforced(decision, confidence)) {
             autoEnforced = false;
         }
     }

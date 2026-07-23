@@ -2,8 +2,10 @@ package com.suplab.aether.agents.config;
 
 import com.suplab.aether.agents.bridge.AetherCoreBridgeAgent;
 import com.suplab.aether.agents.bridge.AetherCoreProperties;
+import com.agentharness.Harness;
 import com.suplab.aether.agents.governance.GovernanceAgent;
 import com.suplab.aether.agents.hallucination.HallucinationDetectorAgent;
+import com.suplab.aether.agents.harness.HarnessSupport;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.orchestrator.AgentOrchestrator;
 import com.suplab.aether.agents.reflection.ReflectionAgent;
@@ -28,8 +30,13 @@ import java.util.List;
 public class AgentsConfig {
 
     @Bean
-    public GovernanceAgent governanceAgent(LlmClient llmClient) {
-        return new GovernanceAgent(llmClient);
+    public Harness agentHarness() {
+        return HarnessSupport.governanceHarness();
+    }
+
+    @Bean
+    public GovernanceAgent governanceAgent(LlmClient llmClient, Harness agentHarness) {
+        return new GovernanceAgent(llmClient, agentHarness);
     }
 
     @Bean

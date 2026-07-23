@@ -1,5 +1,9 @@
 package com.suplab.aether.agents.governance;
 
+import com.agentharness.Harness;
+import com.agentharness.interop.LegacyAgentAdapter;
+import com.agentharness.model.AuthorityLevel;
+import com.agentharness.model.DecisionAction;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -18,6 +22,11 @@ public class GovernanceAgent implements Agent {
     private static final Logger log = LoggerFactory.getLogger(GovernanceAgent.class);
     private static final String AGENT_TYPE = "GovernanceAgent";
 
+    // A governance agent may propose any decision; the harness gate decides enforcement.
+    private static final Set<DecisionAction> CAPABILITIES = Set.of(
+            DecisionAction.ALLOW, DecisionAction.BLOCK, DecisionAction.ALERT,
+            DecisionAction.SUGGEST, DecisionAction.DEFER);
+
     private static final String SYSTEM_PROMPT = """
             You are an API governance agent. Analyse the API call and relevant memory context.
             Return JSON with exactly two fields:
@@ -31,9 +40,11 @@ public class GovernanceAgent implements Agent {
             """;
 
     private final LlmClient llmClient;
+    private final Harness harness;
 
-    public GovernanceAgent(LlmClient llmClient) {
+    public GovernanceAgent(LlmClient llmClient, Harness harness) {
         this.llmClient = llmClient;
+        this.harness = harness;
     }
 
     @Override
@@ -48,19 +59,37 @@ public class GovernanceAgent implements Agent {
 
     @Override
     public AgentOutput execute(AgentInput input) {
-        var userPrompt = buildPrompt(input);
-        var request = LlmRequest.of(
-                llmClient.provider().name().toLowerCase() + ":governance",
-                SYSTEM_PROMPT,
-                userPrompt
-        );
+        // Route through the agent-harness: this agent only proposes a decision; the harness applies the
+        // centralized confidence gate (BLOCK auto-enforces at >= 0.95) and sets autoEnforced.
+        var adapter = new LegacyAgentAdapter(AGENT_TYPE, AuthorityLevel.BLOCK, CAPABILITIES,
+                harnessInput -> propose(input));
+        var request = new com.agentharness.model.AgentInput(
+                input.tenantId().value().toString(),
+                input.callId().value().toString(),
+                Map.of(),
+                Map.of("capability", input.capability().name()));
+        var decision = harness.invoke(adapter, request).decision();
+        return new AgentOutput(
+                input.callId(), AGENT_TYPE,
+                AgentDecision.valueOf(decision.action().name()),
+                decision.confidence(), decision.autoEnforced(), decision.rationale(),
+                Map.of("provider", llmClient.provider().name()), null);
+    }
 
+    /** Produce a proposed decision from the LLM. Fails open to ALLOW; the harness gate decides enforcement. */
+    private LegacyAgentAdapter.LegacyResult propose(AgentInput input) {
+        var request = LlmRequest.of(
+                llmClient.provider().name().toLowerCase() + ":governance", SYSTEM_PROMPT, buildPrompt(input));
         try {
-            var response = llmClient.complete(request);
-            return parseResponse(input, response.content());
+            var json = extractJson(llmClient.complete(request).content());
+            var action = DecisionAction.valueOf(extractStringValue(json, "decision").toUpperCase());
+            var confidence = Double.parseDouble(extractNumberValue(json, "confidence"));
+            var rationale = extractStringValue(json, "rationale");
+            return new LegacyAgentAdapter.LegacyResult(action, confidence, rationale);
         } catch (Exception e) {
-            log.warn("GovernanceAgent LLM call failed for callId={}: {}", input.callId(), e.getMessage());
-            return allowWithLowConfidence(input, "LLM unavailable — defaulting to ALLOW");
+            log.warn("GovernanceAgent decision failed for callId={}: {}", input.callId(), e.getMessage());
+            return new LegacyAgentAdapter.LegacyResult(
+                    DecisionAction.ALLOW, 0.5, "LLM unavailable or unparseable — defaulting to ALLOW");
         }
     }
 
@@ -74,47 +103,11 @@ public class GovernanceAgent implements Agent {
         );
     }
 
-    private AgentOutput parseResponse(AgentInput input, String llmContent) {
-        try {
-            var json = extractJson(llmContent);
-            var decision = parseDecision(json);
-            var confidence = parseConfidence(json);
-            var rationale = parseRationale(json);
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, decision, confidence,
-                    decision == AgentDecision.BLOCK && confidence >= 0.8,
-                    rationale, Map.of("provider", llmClient.provider().name()), null
-            );
-        } catch (Exception e) {
-            log.warn("Failed to parse GovernanceAgent LLM response: {}", e.getMessage());
-            return allowWithLowConfidence(input, "Parse error — defaulting to ALLOW");
-        }
-    }
-
-    private AgentOutput allowWithLowConfidence(AgentInput input, String rationale) {
-        return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.ALLOW,
-                0.5, false, rationale, Map.of(), null);
-    }
-
     private String extractJson(String content) {
         var start = content.indexOf('{');
         var end = content.lastIndexOf('}');
         if (start < 0 || end < 0 || end < start) throw new IllegalArgumentException("No JSON object found in LLM response");
         return content.substring(start, end + 1);
-    }
-
-    private AgentDecision parseDecision(String json) {
-        var match = extractStringValue(json, "decision");
-        return AgentDecision.valueOf(match.toUpperCase());
-    }
-
-    private double parseConfidence(String json) {
-        var match = extractNumberValue(json, "confidence");
-        return Double.parseDouble(match);
-    }
-
-    private String parseRationale(String json) {
-        return extractStringValue(json, "rationale");
     }
 
     private String extractStringValue(String json, String key) {

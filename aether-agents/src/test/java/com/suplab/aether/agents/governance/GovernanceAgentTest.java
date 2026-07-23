@@ -1,5 +1,6 @@
 package com.suplab.aether.agents.governance;
 
+import com.suplab.aether.agents.harness.HarnessSupport;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmProvider;
 import com.suplab.aether.agents.llm.LlmResponse;
@@ -32,7 +33,7 @@ class GovernanceAgentTest {
 
     @BeforeEach
     void setUp() {
-        agent = new GovernanceAgent(llmClient);
+        agent = new GovernanceAgent(llmClient, HarnessSupport.governanceHarness());
     }
 
     @Test

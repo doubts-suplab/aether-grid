@@ -1,5 +1,7 @@
 package com.suplab.aether.agents.temporal;
 
+import com.agentharness.Harness;
+import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -18,6 +20,7 @@ public class TemporalPredictionAgent implements Agent {
 
     private static final Logger log = LoggerFactory.getLogger(TemporalPredictionAgent.class);
     private static final String AGENT_TYPE = "TemporalPredictionAgent";
+    private static final String UNAVAILABLE = "Prediction unavailable — insufficient historical data or LLM error";
 
     private static final String SYSTEM_PROMPT = """
             You are a temporal prediction agent. Analyse historical failure and error patterns.
@@ -31,9 +34,11 @@ public class TemporalPredictionAgent implements Agent {
             """;
 
     private final LlmClient llmClient;
+    private final Harness harness;
 
-    public TemporalPredictionAgent(LlmClient llmClient) {
+    public TemporalPredictionAgent(LlmClient llmClient, Harness harness) {
         this.llmClient = llmClient;
+        this.harness = harness;
     }
 
     @Override
@@ -52,12 +57,7 @@ public class TemporalPredictionAgent implements Agent {
 
         if (memories.isEmpty()) {
             log.debug("TemporalPredictionAgent: no memories for callId={}, returning DEFER", input.callId());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.3, false,
-                    "Prediction unavailable — insufficient historical data or LLM error",
-                    Map.of(), null
-            );
+            return unavailable(input, 0.3);
         }
 
         long episodicCount = memories.stream()
@@ -69,12 +69,7 @@ public class TemporalPredictionAgent implements Agent {
 
         if (episodicCount + semanticCount == 0) {
             log.debug("TemporalPredictionAgent: no episodic/semantic memories for callId={}, returning DEFER", input.callId());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.5, false,
-                    "Prediction unavailable — insufficient historical data or LLM error",
-                    Map.of(), null
-            );
+            return unavailable(input, 0.5);
         }
 
         var userPrompt = String.format(
@@ -92,13 +87,12 @@ public class TemporalPredictionAgent implements Agent {
             return parseResponse(input, response.content());
         } catch (Exception e) {
             log.warn("TemporalPredictionAgent LLM call failed for callId={}: {}", input.callId(), e.getMessage());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.5, false,
-                    "Prediction unavailable — insufficient historical data or LLM error",
-                    Map.of(), null
-            );
+            return unavailable(input, 0.5);
         }
+    }
+
+    private AgentOutput unavailable(AgentInput input, double confidence) {
+        return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.DEFER, confidence, UNAVAILABLE, Map.of());
     }
 
     private AgentOutput parseResponse(AgentInput input, String content) {
@@ -107,20 +101,11 @@ public class TemporalPredictionAgent implements Agent {
             var decision = AgentDecision.valueOf(extractStringValue(json, "decision").toUpperCase());
             var confidence = Double.parseDouble(extractNumberValue(json, "confidence"));
             var rationale = extractStringValue(json, "rationale");
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, decision, confidence,
-                    // Intent to enforce a block; the centralized gate in AgentOutput sets the threshold.
-                    decision == AgentDecision.BLOCK,
-                    rationale, Map.of("provider", llmClient.provider().name()), null
-            );
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, decision, confidence, rationale,
+                    Map.of("provider", llmClient.provider().name()));
         } catch (Exception e) {
             log.warn("TemporalPredictionAgent failed to parse LLM response for callId={}: {}", input.callId(), e.getMessage());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.5, false,
-                    "Prediction unavailable — insufficient historical data or LLM error",
-                    Map.of(), null
-            );
+            return unavailable(input, 0.5);
         }
     }
 

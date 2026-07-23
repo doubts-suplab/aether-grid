@@ -1,8 +1,9 @@
 package com.suplab.aether.agents.config;
 
+import com.agentharness.Harness;
+import com.agentharness.ToolRegistry;
 import com.suplab.aether.agents.bridge.AetherCoreBridgeAgent;
 import com.suplab.aether.agents.bridge.AetherCoreProperties;
-import com.agentharness.Harness;
 import com.suplab.aether.agents.governance.GovernanceAgent;
 import com.suplab.aether.agents.hallucination.HallucinationDetectorAgent;
 import com.suplab.aether.agents.harness.HarnessSupport;
@@ -23,15 +24,30 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import java.util.List;
+import java.util.Set;
 
 @Configuration
 @Import(com.suplab.aether.agents.llm.LlmClientConfig.class)
 @EnableConfigurationProperties(AetherCoreProperties.class)
 public class AgentsConfig {
 
+    /**
+     * The shared tool registry — the governance boundary for agent tool use (default-deny, no wildcards).
+     * A demonstrative read-only {@code policy_lookup} tool is registered and granted only to the
+     * GovernanceAgent; no other agent can reach it. Wire real tools (policy/memory lookups) here.
+     */
     @Bean
-    public Harness agentHarness() {
-        return HarnessSupport.governanceHarness();
+    public ToolRegistry agentToolRegistry() {
+        var registry = new ToolRegistry();
+        registry.registerTool("policy_lookup", "read", args -> "no-matching-policy");
+        registry.grant("GovernanceAgent", Set.of("policy_lookup"));
+        return registry;
+    }
+
+    /** The shared agent-harness. Every agent routes its decision through this for the centralized gate. */
+    @Bean
+    public Harness agentHarness(ToolRegistry agentToolRegistry) {
+        return HarnessSupport.harness(agentToolRegistry);
     }
 
     @Bean
@@ -40,33 +56,35 @@ public class AgentsConfig {
     }
 
     @Bean
-    public RetryAgent retryAgent(LlmClient llmClient) {
-        return new RetryAgent(llmClient);
+    public RetryAgent retryAgent(LlmClient llmClient, Harness agentHarness) {
+        return new RetryAgent(llmClient, agentHarness);
     }
 
     @Bean
-    public HallucinationDetectorAgent hallucinationDetectorAgent(LlmClient llmClient) {
-        return new HallucinationDetectorAgent(llmClient);
+    public HallucinationDetectorAgent hallucinationDetectorAgent(LlmClient llmClient, Harness agentHarness) {
+        return new HallucinationDetectorAgent(llmClient, agentHarness);
     }
 
     @Bean
-    public TemporalPredictionAgent temporalPredictionAgent(LlmClient llmClient) {
-        return new TemporalPredictionAgent(llmClient);
+    public TemporalPredictionAgent temporalPredictionAgent(LlmClient llmClient, Harness agentHarness) {
+        return new TemporalPredictionAgent(llmClient, agentHarness);
     }
 
     @Bean
-    public ReflectionAgent reflectionAgent(LlmClient llmClient) {
-        return new ReflectionAgent(llmClient);
+    public ReflectionAgent reflectionAgent(LlmClient llmClient, Harness agentHarness) {
+        return new ReflectionAgent(llmClient, agentHarness);
     }
 
     @Bean
-    public SelfImprovingAgent selfImprovingAgent(LlmClient llmClient, AgentFeedbackPort feedbackPort) {
-        return new SelfImprovingAgent(llmClient, feedbackPort);
+    public SelfImprovingAgent selfImprovingAgent(LlmClient llmClient, AgentFeedbackPort feedbackPort,
+                                                 Harness agentHarness) {
+        return new SelfImprovingAgent(llmClient, feedbackPort, agentHarness);
     }
 
     @Bean
-    public AetherCoreBridgeAgent aetherCoreBridgeAgent(PersonalContextPort personalContextPort) {
-        return new AetherCoreBridgeAgent(personalContextPort);
+    public AetherCoreBridgeAgent aetherCoreBridgeAgent(PersonalContextPort personalContextPort,
+                                                       Harness agentHarness) {
+        return new AetherCoreBridgeAgent(personalContextPort, agentHarness);
     }
 
     @Bean

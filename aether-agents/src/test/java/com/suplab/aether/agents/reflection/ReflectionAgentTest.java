@@ -1,5 +1,6 @@
 package com.suplab.aether.agents.reflection;
 
+import com.suplab.aether.agents.harness.HarnessSupport;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmProvider;
 import com.suplab.aether.agents.llm.LlmResponse;
@@ -35,7 +36,7 @@ class ReflectionAgentTest {
 
     @BeforeEach
     void setUp() {
-        agent = new ReflectionAgent(llmClient);
+        agent = new ReflectionAgent(llmClient, HarnessSupport.governanceHarness());
     }
 
     @Test

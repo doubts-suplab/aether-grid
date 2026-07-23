@@ -19,8 +19,14 @@ public final class HarnessSupport {
     private HarnessSupport() {
     }
 
+    /** A harness with its own (empty, default-deny) tool registry. */
     public static Harness governanceHarness() {
-        return new Harness(new ToolRegistry(), new NoopAudit(), new NoopHumanReview(),
+        return harness(new ToolRegistry());
+    }
+
+    /** A harness backed by a shared, pre-configured tool registry (the governance boundary for tools). */
+    public static Harness harness(ToolRegistry registry) {
+        return new Harness(registry, new NoopAudit(), new NoopHumanReview(),
                 new NoopObservability(), new InMemoryKillSwitch(), new ConfidenceGate());
     }
 

@@ -1,5 +1,7 @@
 package com.suplab.aether.agents.reflection;
 
+import com.agentharness.Harness;
+import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -30,9 +32,11 @@ public class ReflectionAgent implements Agent {
             """;
 
     private final LlmClient llmClient;
+    private final Harness harness;
 
-    public ReflectionAgent(LlmClient llmClient) {
+    public ReflectionAgent(LlmClient llmClient, Harness harness) {
         this.llmClient = llmClient;
+        this.harness = harness;
     }
 
     @Override
@@ -51,12 +55,7 @@ public class ReflectionAgent implements Agent {
 
         if (memories.isEmpty()) {
             log.debug("ReflectionAgent: no memories for callId={}, skipping reflection", input.callId());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.4, false,
-                    "Reflection skipped — insufficient data",
-                    Map.of(), null
-            );
+            return skipped(input);
         }
 
         long proceduralCount = memories.stream()
@@ -69,12 +68,9 @@ public class ReflectionAgent implements Agent {
 
         if (healthScore >= 0.5) {
             int healthPercent = (int) Math.round(healthScore * 100);
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.ALLOW,
-                    healthScore, false,
-                    "System health nominal at " + healthPercent + "%",
-                    Map.of("healthScore", healthScore, "proceduralCount", proceduralCount), null
-            );
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.ALLOW,
+                    healthScore, "System health nominal at " + healthPercent + "%",
+                    Map.of("healthScore", healthScore, "proceduralCount", proceduralCount));
         }
 
         var userPrompt = String.format(
@@ -92,13 +88,13 @@ public class ReflectionAgent implements Agent {
             return parseResponse(input, response.content(), healthScore, proceduralCount);
         } catch (Exception e) {
             log.warn("ReflectionAgent LLM call failed for callId={}: {}", input.callId(), e.getMessage());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.4, false,
-                    "Reflection skipped — insufficient data",
-                    Map.of(), null
-            );
+            return skipped(input);
         }
+    }
+
+    private AgentOutput skipped(AgentInput input) {
+        return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.DEFER,
+                0.4, "Reflection skipped — insufficient data", Map.of());
     }
 
     private AgentOutput parseResponse(AgentInput input, String content, double healthScore, long proceduralCount) {
@@ -107,22 +103,12 @@ public class ReflectionAgent implements Agent {
             var decision = AgentDecision.valueOf(extractStringValue(json, "decision").toUpperCase());
             var confidence = Double.parseDouble(extractNumberValue(json, "confidence"));
             var rationale = extractStringValue(json, "rationale");
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, decision, confidence,
-                    false,
-                    rationale,
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, decision, confidence, rationale,
                     Map.of("healthScore", healthScore, "proceduralCount", proceduralCount,
-                            "provider", llmClient.provider().name()),
-                    null
-            );
+                            "provider", llmClient.provider().name()));
         } catch (Exception e) {
             log.warn("ReflectionAgent failed to parse LLM response for callId={}: {}", input.callId(), e.getMessage());
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                    0.4, false,
-                    "Reflection skipped — insufficient data",
-                    Map.of(), null
-            );
+            return skipped(input);
         }
     }
 

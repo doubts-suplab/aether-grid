@@ -1,5 +1,7 @@
 package com.suplab.aether.agents.selfimproving;
 
+import com.agentharness.Harness;
+import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -34,10 +36,12 @@ public class SelfImprovingAgent implements Agent {
 
     private final LlmClient llmClient;
     private final AgentFeedbackPort feedbackPort;
+    private final Harness harness;
 
-    public SelfImprovingAgent(LlmClient llmClient, AgentFeedbackPort feedbackPort) {
+    public SelfImprovingAgent(LlmClient llmClient, AgentFeedbackPort feedbackPort, Harness harness) {
         this.llmClient = llmClient;
         this.feedbackPort = feedbackPort;
+        this.harness = harness;
     }
 
     @Override
@@ -121,11 +125,8 @@ public class SelfImprovingAgent implements Agent {
             var decision = parseDecision(json);
             var confidence = parseConfidence(json);
             var rationale = parseRationale(json);
-            return new AgentOutput(
-                    input.callId(), AGENT_TYPE, decision, confidence,
-                    false,
-                    rationale, Map.of("provider", llmClient.provider().name()), null
-            );
+            return HarnessRouting.gate(harness, AGENT_TYPE, input, decision, confidence, rationale,
+                    Map.of("provider", llmClient.provider().name()));
         } catch (Exception e) {
             log.warn("Failed to parse SelfImprovingAgent LLM response: {}", e.getMessage());
             return deferWithRationale(input, "Self-improvement analysis unavailable", 0.4);
@@ -133,8 +134,7 @@ public class SelfImprovingAgent implements Agent {
     }
 
     private AgentOutput deferWithRationale(AgentInput input, String rationale, double confidence) {
-        return new AgentOutput(input.callId(), AGENT_TYPE, AgentDecision.DEFER,
-                confidence, false, rationale, Map.of(), null);
+        return HarnessRouting.gate(harness, AGENT_TYPE, input, AgentDecision.DEFER, confidence, rationale, Map.of());
     }
 
     private String extractJson(String content) {

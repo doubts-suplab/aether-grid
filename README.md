@@ -1,4 +1,4 @@
-# Aether Grid
+# Æ Aether Grid
 
 > Distributed intelligence mesh — enterprise AI agent governance platform
 

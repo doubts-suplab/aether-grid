@@ -428,3 +428,19 @@ These are tracked but not scoped for the current roadmap:
 ---
 
 > **Aether Core Roadmap:** For the personal cognitive engine roadmap, see [suplab/aether-core/docs/roadmap.md](https://github.com/suplab/aether-core/blob/main/docs/roadmap.md).
+
+---
+
+## Ecosystem review — future backlog
+
+> Repo-specific items from the [ecosystem improvement backlog](https://github.com/doubts-suplab/aether/blob/main/docs/roadmaps/ecosystem-improvements.md). Planned, not started.
+> Feasibility: **S** small · **M** moderate · **L** large. License unchanged (AGPL-3.0).
+
+| Item | Feasibility |
+|---|---|
+| Deeper integration with Memory / Vault / Flow | M–L |
+| More sophisticated agent orchestration + evaluation | M–L |
+| Proxy latency/throughput under realistic load | M |
+| Stronger hallucination/reflection loops with measurable improvement | L |
+| Expand agent SPI + marketplace-like extensibility | M–L |
+| Production-harden the confidence gate + DEFER path | M |

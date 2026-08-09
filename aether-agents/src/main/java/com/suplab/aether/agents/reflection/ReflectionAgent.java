@@ -1,6 +1,6 @@
 package com.suplab.aether.agents.reflection;
 
-import com.agentharness.Harness;
+import com.suplab.agentharness.Harness;
 import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
@@ -75,16 +75,14 @@ public class ReflectionAgent implements Agent {
 
         var userPrompt = String.format(
                 "System health score: %.2f (procedural memories: %d / total: %d).%n" +
-                "API call context: %s%nAnalyse what is going wrong and suggest optimizations.",
-                healthScore, proceduralCount, memories.size(), input.serialisedApiCall()
-        );
+                        "API call context: %s%nAnalyse what is going wrong and suggest optimizations.",
+                healthScore, proceduralCount, memories.size(), input.serialisedApiCall());
 
         try {
             var response = llmClient.complete(LlmRequest.of(
                     llmClient.provider().name().toLowerCase() + ":reflection",
                     SYSTEM_PROMPT,
-                    userPrompt
-            ));
+                    userPrompt));
             return parseResponse(input, response.content(), healthScore, proceduralCount);
         } catch (Exception e) {
             log.warn("ReflectionAgent LLM call failed for callId={}: {}", input.callId(), e.getMessage());
@@ -124,14 +122,16 @@ public class ReflectionAgent implements Agent {
     private String extractStringValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Key not found in JSON: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Key not found in JSON: " + key);
         return matcher.group(1);
     }
 
     private String extractNumberValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*([0-9.]+)";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Numeric key not found in JSON: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Numeric key not found in JSON: " + key);
         return matcher.group(1);
     }
 }

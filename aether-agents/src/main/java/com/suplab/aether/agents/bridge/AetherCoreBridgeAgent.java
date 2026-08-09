@@ -1,6 +1,6 @@
 package com.suplab.aether.agents.bridge;
 
-import com.agentharness.Harness;
+import com.suplab.agentharness.Harness;
 import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.spi.Agent;
 import com.suplab.aether.agents.spi.AgentCapability;

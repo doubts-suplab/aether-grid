@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -29,8 +28,8 @@
              decision envelope. Published to GitHub Packages by agent-harness (see the github repository
              below); available locally via `mvn install` in agent-harness/java. See ADR-0009 there. -->
         <dependency>
-            <groupId>com.agentharness</groupId>
-            <artifactId>agent-harness-java</artifactId>
+            <groupId>com.suplab.agentharness</groupId>
+            <artifactId>halo-agent-harness</artifactId>
             <version>0.1.0</version>
         </dependency>
 
@@ -87,8 +86,12 @@
         <repository>
             <id>github-agent-harness</id>
             <url>https://maven.pkg.github.com/doubts-suplab/agent-harness</url>
-            <releases><enabled>true</enabled></releases>
-            <snapshots><enabled>false</enabled></snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
 

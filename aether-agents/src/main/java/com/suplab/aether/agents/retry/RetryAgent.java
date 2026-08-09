@@ -1,6 +1,6 @@
 package com.suplab.aether.agents.retry;
 
-import com.agentharness.Harness;
+import com.suplab.agentharness.Harness;
 import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
@@ -59,8 +59,7 @@ public class RetryAgent implements Agent {
 
         var userPrompt = String.format(
                 "Failed call: %s\nRecent failure count from memory: %d\nContext: %s",
-                input.serialisedApiCall(), failureCount, input.context()
-        );
+                input.serialisedApiCall(), failureCount, input.context());
         var request = LlmRequest.of("", SYSTEM_PROMPT, userPrompt);
 
         try {

@@ -1,6 +1,6 @@
 package com.suplab.aether.agents.temporal;
 
-import com.agentharness.Harness;
+import com.suplab.agentharness.Harness;
 import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
@@ -68,22 +68,22 @@ public class TemporalPredictionAgent implements Agent {
                 .count();
 
         if (episodicCount + semanticCount == 0) {
-            log.debug("TemporalPredictionAgent: no episodic/semantic memories for callId={}, returning DEFER", input.callId());
+            log.debug("TemporalPredictionAgent: no episodic/semantic memories for callId={}, returning DEFER",
+                    input.callId());
             return unavailable(input, 0.5);
         }
 
         var userPrompt = String.format(
-                "Historical context: %d episodic (failures/timeouts) and %d semantic (4xx errors) memories detected.%n" +
-                "Total memory records: %d%nAPI call context: %s",
-                episodicCount, semanticCount, memories.size(), input.serialisedApiCall()
-        );
+                "Historical context: %d episodic (failures/timeouts) and %d semantic (4xx errors) memories detected.%n"
+                        +
+                        "Total memory records: %d%nAPI call context: %s",
+                episodicCount, semanticCount, memories.size(), input.serialisedApiCall());
 
         try {
             var response = llmClient.complete(LlmRequest.of(
                     llmClient.provider().name().toLowerCase() + ":temporal-prediction",
                     SYSTEM_PROMPT,
-                    userPrompt
-            ));
+                    userPrompt));
             return parseResponse(input, response.content());
         } catch (Exception e) {
             log.warn("TemporalPredictionAgent LLM call failed for callId={}: {}", input.callId(), e.getMessage());
@@ -104,7 +104,8 @@ public class TemporalPredictionAgent implements Agent {
             return HarnessRouting.gate(harness, AGENT_TYPE, input, decision, confidence, rationale,
                     Map.of("provider", llmClient.provider().name()));
         } catch (Exception e) {
-            log.warn("TemporalPredictionAgent failed to parse LLM response for callId={}: {}", input.callId(), e.getMessage());
+            log.warn("TemporalPredictionAgent failed to parse LLM response for callId={}: {}", input.callId(),
+                    e.getMessage());
             return unavailable(input, 0.5);
         }
     }
@@ -121,14 +122,16 @@ public class TemporalPredictionAgent implements Agent {
     private String extractStringValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Key not found in JSON: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Key not found in JSON: " + key);
         return matcher.group(1);
     }
 
     private String extractNumberValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*([0-9.]+)";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Numeric key not found in JSON: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Numeric key not found in JSON: " + key);
         return matcher.group(1);
     }
 }

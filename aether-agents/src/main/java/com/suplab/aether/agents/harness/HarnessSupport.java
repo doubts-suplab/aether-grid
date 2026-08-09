@@ -1,17 +1,20 @@
 package com.suplab.aether.agents.harness;
 
-import com.agentharness.ConfidenceGate;
-import com.agentharness.Harness;
-import com.agentharness.ToolRegistry;
-import com.agentharness.adapters.InMemoryKillSwitch;
-import com.agentharness.ports.AuditPort;
-import com.agentharness.ports.HumanReviewPort;
-import com.agentharness.ports.ObservabilityPort;
+import com.suplab.agentharness.ConfidenceGate;
+import com.suplab.agentharness.Harness;
+import com.suplab.agentharness.ToolRegistry;
+import com.suplab.agentharness.adapters.InMemoryKillSwitch;
+import com.suplab.agentharness.ports.AuditPort;
+import com.suplab.agentharness.ports.HumanReviewPort;
+import com.suplab.agentharness.ports.ObservabilityPort;
 
 /**
- * Wires an agent-harness {@link Harness} for Grid. The harness contributes the confidence gate and the
- * decision envelope; Grid keeps its own audit ({@code AgentDecisionEvent}), review
- * ({@code OrchestrationResult}) and metrics (Micrometer in the orchestrator), so the harness's
+ * Wires an agent-harness {@link Harness} for Grid. The harness contributes the
+ * confidence gate and the
+ * decision envelope; Grid keeps its own audit ({@code AgentDecisionEvent}),
+ * review
+ * ({@code OrchestrationResult}) and metrics (Micrometer in the orchestrator),
+ * so the harness's
  * cross-cutting ports are no-ops here.
  */
 public final class HarnessSupport {
@@ -24,7 +27,10 @@ public final class HarnessSupport {
         return harness(new ToolRegistry());
     }
 
-    /** A harness backed by a shared, pre-configured tool registry (the governance boundary for tools). */
+    /**
+     * A harness backed by a shared, pre-configured tool registry (the governance
+     * boundary for tools).
+     */
     public static Harness harness(ToolRegistry registry) {
         return new Harness(registry, new NoopAudit(), new NoopHumanReview(),
                 new NoopObservability(), new InMemoryKillSwitch(), new ConfidenceGate());

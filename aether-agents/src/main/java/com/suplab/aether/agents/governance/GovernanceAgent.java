@@ -1,9 +1,9 @@
 package com.suplab.aether.agents.governance;
 
-import com.agentharness.Harness;
-import com.agentharness.interop.LegacyAgentAdapter;
-import com.agentharness.model.AuthorityLevel;
-import com.agentharness.model.DecisionAction;
+import com.suplab.agentharness.Harness;
+import com.suplab.agentharness.interop.LegacyAgentAdapter;
+import com.suplab.agentharness.model.AuthorityLevel;
+import com.suplab.agentharness.model.DecisionAction;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
 import com.suplab.aether.agents.spi.Agent;
@@ -22,7 +22,8 @@ public class GovernanceAgent implements Agent {
     private static final Logger log = LoggerFactory.getLogger(GovernanceAgent.class);
     private static final String AGENT_TYPE = "GovernanceAgent";
 
-    // A governance agent may propose any decision; the harness gate decides enforcement.
+    // A governance agent may propose any decision; the harness gate decides
+    // enforcement.
     private static final Set<DecisionAction> CAPABILITIES = Set.of(
             DecisionAction.ALLOW, DecisionAction.BLOCK, DecisionAction.ALERT,
             DecisionAction.SUGGEST, DecisionAction.DEFER);
@@ -59,11 +60,13 @@ public class GovernanceAgent implements Agent {
 
     @Override
     public AgentOutput execute(AgentInput input) {
-        // Route through the agent-harness: this agent only proposes a decision; the harness applies the
-        // centralized confidence gate (BLOCK auto-enforces at >= 0.95) and sets autoEnforced.
+        // Route through the agent-harness: this agent only proposes a decision; the
+        // harness applies the
+        // centralized confidence gate (BLOCK auto-enforces at >= 0.95) and sets
+        // autoEnforced.
         var adapter = new LegacyAgentAdapter(AGENT_TYPE, AuthorityLevel.BLOCK, CAPABILITIES,
                 harnessInput -> propose(input));
-        var request = new com.agentharness.model.AgentInput(
+        var request = new com.suplab.agentharness.model.AgentInput(
                 input.tenantId().value().toString(),
                 input.callId().value().toString(),
                 Map.of(),
@@ -76,7 +79,10 @@ public class GovernanceAgent implements Agent {
                 Map.of("provider", llmClient.provider().name()), null);
     }
 
-    /** Produce a proposed decision from the LLM. Fails open to ALLOW; the harness gate decides enforcement. */
+    /**
+     * Produce a proposed decision from the LLM. Fails open to ALLOW; the harness
+     * gate decides enforcement.
+     */
     private LegacyAgentAdapter.LegacyResult propose(AgentInput input) {
         var request = LlmRequest.of(
                 llmClient.provider().name().toLowerCase() + ":governance", SYSTEM_PROMPT, buildPrompt(input));
@@ -99,28 +105,30 @@ public class GovernanceAgent implements Agent {
                 "API call: %s\nRelevant memory records: %d\nCall context: %s",
                 input.serialisedApiCall(),
                 memoryCount,
-                input.context().isEmpty() ? "none" : input.context().toString()
-        );
+                input.context().isEmpty() ? "none" : input.context().toString());
     }
 
     private String extractJson(String content) {
         var start = content.indexOf('{');
         var end = content.lastIndexOf('}');
-        if (start < 0 || end < 0 || end < start) throw new IllegalArgumentException("No JSON object found in LLM response");
+        if (start < 0 || end < 0 || end < start)
+            throw new IllegalArgumentException("No JSON object found in LLM response");
         return content.substring(start, end + 1);
     }
 
     private String extractStringValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Key not found: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Key not found: " + key);
         return matcher.group(1);
     }
 
     private String extractNumberValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*([0-9.]+)";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Key not found: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Key not found: " + key);
         return matcher.group(1);
     }
 }

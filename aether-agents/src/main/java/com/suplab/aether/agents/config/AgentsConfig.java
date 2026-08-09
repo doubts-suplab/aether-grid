@@ -1,7 +1,7 @@
 package com.suplab.aether.agents.config;
 
-import com.agentharness.Harness;
-import com.agentharness.ToolRegistry;
+import com.suplab.agentharness.Harness;
+import com.suplab.agentharness.ToolRegistry;
 import com.suplab.aether.agents.bridge.AetherCoreBridgeAgent;
 import com.suplab.aether.agents.bridge.AetherCoreProperties;
 import com.suplab.aether.agents.governance.GovernanceAgent;
@@ -32,9 +32,12 @@ import java.util.Set;
 public class AgentsConfig {
 
     /**
-     * The shared tool registry — the governance boundary for agent tool use (default-deny, no wildcards).
-     * A demonstrative read-only {@code policy_lookup} tool is registered and granted only to the
-     * GovernanceAgent; no other agent can reach it. Wire real tools (policy/memory lookups) here.
+     * The shared tool registry — the governance boundary for agent tool use
+     * (default-deny, no wildcards).
+     * A demonstrative read-only {@code policy_lookup} tool is registered and
+     * granted only to the
+     * GovernanceAgent; no other agent can reach it. Wire real tools (policy/memory
+     * lookups) here.
      */
     @Bean
     public ToolRegistry agentToolRegistry() {
@@ -44,7 +47,10 @@ public class AgentsConfig {
         return registry;
     }
 
-    /** The shared agent-harness. Every agent routes its decision through this for the centralized gate. */
+    /**
+     * The shared agent-harness. Every agent routes its decision through this for
+     * the centralized gate.
+     */
     @Bean
     public Harness agentHarness(ToolRegistry agentToolRegistry) {
         return HarnessSupport.harness(agentToolRegistry);
@@ -77,13 +83,13 @@ public class AgentsConfig {
 
     @Bean
     public SelfImprovingAgent selfImprovingAgent(LlmClient llmClient, AgentFeedbackPort feedbackPort,
-                                                 Harness agentHarness) {
+            Harness agentHarness) {
         return new SelfImprovingAgent(llmClient, feedbackPort, agentHarness);
     }
 
     @Bean
     public AetherCoreBridgeAgent aetherCoreBridgeAgent(PersonalContextPort personalContextPort,
-                                                       Harness agentHarness) {
+            Harness agentHarness) {
         return new AetherCoreBridgeAgent(personalContextPort, agentHarness);
     }
 

@@ -15,7 +15,7 @@
 
 ### Agent runtime — consumes the generic agent-harness ✅
 `aether-agents` now depends on the [`agent-harness`](https://github.com/doubts-suplab/agent-harness) Java
-binding (`com.agentharness:agent-harness-java`). The confidence gate is **centralized** in
+binding (`com.suplab.agentharness:halo-agent-harness`). The confidence gate is **centralized** in
 `HarnessConfidenceGate` (delegating to the harness `ConfidenceGate`) — the former flat `0.8` literal that was
 duplicated in `AgentOutput`, `GovernanceAgent`, and `TemporalPredictionAgent` is gone. A `BLOCK` now
 auto-enforces at confidence **≥ 0.95** (AIEL authority ladder).

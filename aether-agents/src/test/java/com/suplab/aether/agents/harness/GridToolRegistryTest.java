@@ -1,18 +1,18 @@
 package com.suplab.aether.agents.harness;
 
-import com.agentharness.Agent;
-import com.agentharness.ConfidenceGate;
-import com.agentharness.Harness;
-import com.agentharness.ToolInvoker;
-import com.agentharness.ToolRegistry;
-import com.agentharness.adapters.InMemoryAudit;
-import com.agentharness.adapters.InMemoryHumanReview;
-import com.agentharness.adapters.InMemoryKillSwitch;
-import com.agentharness.adapters.InMemoryObservability;
-import com.agentharness.model.AgentInput;
-import com.agentharness.model.AuthorityLevel;
-import com.agentharness.model.Decision;
-import com.agentharness.model.DecisionAction;
+import com.suplab.agentharness.Agent;
+import com.suplab.agentharness.ConfidenceGate;
+import com.suplab.agentharness.Harness;
+import com.suplab.agentharness.ToolInvoker;
+import com.suplab.agentharness.ToolRegistry;
+import com.suplab.agentharness.adapters.InMemoryAudit;
+import com.suplab.agentharness.adapters.InMemoryHumanReview;
+import com.suplab.agentharness.adapters.InMemoryKillSwitch;
+import com.suplab.agentharness.adapters.InMemoryObservability;
+import com.suplab.agentharness.model.AgentInput;
+import com.suplab.agentharness.model.AuthorityLevel;
+import com.suplab.agentharness.model.Decision;
+import com.suplab.agentharness.model.DecisionAction;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
@@ -21,8 +21,10 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * The tool registry wired into Grid's harness is the governance boundary for tools: default-deny, and a
- * refused call becomes a safe failure default plus a security event. An agent may only reach a tool it has
+ * The tool registry wired into Grid's harness is the governance boundary for
+ * tools: default-deny, and a
+ * refused call becomes a safe failure default plus a security event. An agent
+ * may only reach a tool it has
  * been explicitly granted.
  */
 class GridToolRegistryTest {

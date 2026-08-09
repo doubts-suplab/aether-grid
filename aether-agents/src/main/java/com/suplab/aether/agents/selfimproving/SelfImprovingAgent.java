@@ -1,6 +1,6 @@
 package com.suplab.aether.agents.selfimproving;
 
-import com.agentharness.Harness;
+import com.suplab.agentharness.Harness;
 import com.suplab.aether.agents.harness.HarnessRouting;
 import com.suplab.aether.agents.llm.LlmClient;
 import com.suplab.aether.agents.llm.LlmRequest;
@@ -62,7 +62,7 @@ public class SelfImprovingAgent implements Agent {
         var agentTypesToAnalyse = input.context().containsKey("agentTypes")
                 ? (List<String>) input.context().get("agentTypes")
                 : List.of("GovernanceAgent", "RetryAgent", "HallucinationDetectorAgent",
-                          "TemporalPredictionAgent", "ReflectionAgent");
+                        "TemporalPredictionAgent", "ReflectionAgent");
 
         var allFeedback = agentTypesToAnalyse.stream()
                 .flatMap(type -> feedbackPort.findByAgentType(tenantId, type, FEEDBACK_LIMIT).stream())
@@ -79,8 +79,7 @@ public class SelfImprovingAgent implements Agent {
         var request = LlmRequest.of(
                 llmClient.provider().name().toLowerCase() + ":self-improvement",
                 SYSTEM_PROMPT,
-                summary
-        );
+                summary);
 
         try {
             var response = llmClient.complete(request);
@@ -163,14 +162,16 @@ public class SelfImprovingAgent implements Agent {
     private String extractStringValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]+)\"";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Key not found: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Key not found: " + key);
         return matcher.group(1);
     }
 
     private String extractNumberValue(String json, String key) {
         var pattern = "\"" + key + "\"\\s*:\\s*([0-9.]+)";
         var matcher = java.util.regex.Pattern.compile(pattern).matcher(json);
-        if (!matcher.find()) throw new IllegalArgumentException("Key not found: " + key);
+        if (!matcher.find())
+            throw new IllegalArgumentException("Key not found: " + key);
         return matcher.group(1);
     }
 }

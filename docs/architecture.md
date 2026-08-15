@@ -391,6 +391,12 @@ For each agent (parallel via VirtualThreadPerTaskExecutor):
     GovernanceAgent runs through Harness.invoke; AgentOutput delegates the same gate.
     (Supersedes Grid's former flat 0.8 literal; the gate lives in ONE place — see HarnessConfidenceGate.)
 
+  Per-agent authority ceilings (HarnessRouting; harness enforces action-within-authority):
+    Retry/Reflection/SelfImproving → SUGGEST · Hallucination/Temporal → ALERT ·
+    AetherCoreBridge → OBSERVE · GovernanceAgent → BLOCK · unprofiled → OBSERVE (fail-safe).
+    An action above an agent's ceiling is a security event → safe non-enforcing DEFER,
+    so only GovernanceAgent can ever auto-enforce a BLOCK.
+
   Persist AgentDecision to agent_decisions table
   Publish AgentDecisionEvent to Kafka
        │

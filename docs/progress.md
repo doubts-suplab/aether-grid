@@ -23,10 +23,18 @@ auto-enforces at confidence **≥ 0.95** (AIEL authority ladder).
 - **All seven agents route through `Harness.invoke`** — `GovernanceAgent` directly, and the other six
   (`Retry`, `Hallucination`, `Temporal`, `Reflection`, `SelfImproving`, `AetherCoreBridge`) via the shared
   `HarnessRouting.gate(...)` helper, which gates each proposed decision while preserving the agent's metadata.
+- **Honest per-agent authority ceilings** — `HarnessRouting` no longer wraps every agent at a blanket
+  `BLOCK`; each agent carries its true ceiling (`Retry`/`Reflection`/`SelfImproving` → `SUGGEST`,
+  `Hallucination`/`Temporal` → `ALERT`, `AetherCoreBridge` → `OBSERVE`; only `GovernanceAgent` → `BLOCK`),
+  centralised in the one routing choke point with a fail-safe `OBSERVE` default for any unprofiled agent.
+  The harness enforces it: an action above an agent's ceiling becomes a security event and a safe
+  non-enforcing `DEFER` — so a suggestion-only agent can never auto-enforce a `BLOCK`.
 - **Tool registry wired** (`ToolRegistry` bean → shared `Harness`) — the governance boundary for agent tools:
   **default-deny**, no wildcards, refusals become safe failure defaults + security events. A demonstrative
   read-only `policy_lookup` tool is registered and granted only to `GovernanceAgent`.
-- **41 `aether-agents` tests green** (incl. `HarnessConfidenceGateTest`, `GridToolRegistryTest`).
+- **44 `aether-agents` tests green** (incl. `HarnessConfidenceGateTest`, `GridToolRegistryTest`,
+  `HarnessRoutingTest` — proves an over-authority `BLOCK` from a `SUGGEST`-ceiling agent is clamped to a
+  safe `DEFER`).
 
 The binding is resolved from the local Maven repo via `mvn install`; publishing to a shared registry is
 tracked separately.

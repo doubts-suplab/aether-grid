@@ -18,6 +18,24 @@ resolved from the local Maven repo until a shared registry is configured. Remain
 
 ---
 
+## D-0NN — Honest per-agent authority ceilings (not blanket BLOCK)
+**Date:** 2026-08-15
+**Status:** Accepted
+**Decision:** `HarnessRouting` wraps each agent at its true authority ceiling instead of a blanket
+`AuthorityLevel.BLOCK` with all five actions. Ceilings: `Retry`/`Reflection`/`SelfImproving` → `SUGGEST`,
+`Hallucination`/`Temporal` → `ALERT`, `AetherCoreBridge` → `OBSERVE`, `GovernanceAgent` → `BLOCK`; an
+unprofiled agent fails safe to `OBSERVE`. The ceilings live in the one routing choke point so the whole
+grid's authority policy is auditable in a single place.
+**Rationale:** The harness already enforces `action-within-authority` (an over-authority action becomes a
+security event + safe non-enforcing `DEFER`), so the previous blanket `BLOCK` silently gave every advisory
+agent block authority — a conformance gap vs. the spec's static per-agent ceiling (§3.1). Now only
+`GovernanceAgent` can auto-enforce a `BLOCK`; a suggestion-only agent's stray `BLOCK` is clamped to a safe
+`DEFER`. Proven by `HarnessRoutingTest`.
+**Trade-off:** A new agent must declare a ceiling (add a profile) to gain authority above `OBSERVE` — an
+intentional fail-safe, not a regression.
+
+---
+
 ## D-001 — Spring Cloud Gateway over custom Netty proxy
 **Date:** 2026-06-14  
 **Status:** Accepted  

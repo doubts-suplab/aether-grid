@@ -1,0 +1,69 @@
+# EEIK Project Manifest — Aether Grid
+# Canonical manifest (schema_version 1.0) — validates against eeik/schemas/manifest.schema.json.
+# Replaces the pre-canonical aether.manifest.yaml. Adopted at the manifest level; engine-driven
+# activate/lock/verify against an external repo is an eeik follow-up.
+
+schema_version: "1.0"
+
+project:
+  name: aether-grid
+  description: >
+    Distributed enterprise intelligence layer — a smart proxy and governance platform
+    orchestrating a mesh of specialised AI agents that learn, self-improve, and enforce policy.
+  owner: suplab
+  domain: generic
+  project_type: agent-platform
+
+technology:
+  backend:
+    language: java
+    version: 21
+    framework: spring-boot
+  database:
+    type: postgresql
+    migration_tool: flyway
+    orm: jdbctemplate
+  messaging:
+    broker: kafka
+    pattern: event-driven
+  containerisation:
+    runtime: docker
+
+architecture:
+  style: modular-monolith
+  patterns:
+    - ddd
+    - cqrs
+    - outbox
+  api_style: rest
+
+cloud:
+  provider: local-first
+  infra_as_code: none
+  multi_account: false
+  finops: false
+
+ai:
+  enabled: true
+  pattern: multi-agent
+  framework: agent-harness
+  foundation_model: ollama
+  governance_required: true
+  memory_pattern: vector-store
+
+governance:
+  profile: enterprise
+  reviews_required:
+    - architecture-review
+    - security-review
+    - ai-governance-review
+  compliance_frameworks:
+    - gdpr
+  adr_required: true
+  coverage_threshold: 80
+
+delivery:
+  model: single-team
+  methodology: incremental
+  sprint_length_weeks: 2
+  cicd_platform: github-actions

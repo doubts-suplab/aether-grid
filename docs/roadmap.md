@@ -403,9 +403,11 @@
 
 ---
 
-## Phase 17 — Aether Core Scaffold (sister repo bootstrap) 🔄
+## Phase 17 — Aether Core Scaffold (sister repo bootstrap) ✅
 
 **Goal:** Bootstrap the `suplab/aether-core` sister repository with its own EEIK governance layer, Maven structure, and domain scaffold.
+
+**Status:** Complete. `suplab/aether-core` is bootstrapped and has matured well beyond a scaffold — its own EEIK governance layer, Maven multi-module structure (`core-domain` / `core-memory` / `core-api` / `core-infra`), a personal-memory + reasoning-session domain over pgvector, GDPR erasure + retention + data-portability, and a production Helm chart. With this, Grid's roadmap (Phases 0–17) is fully delivered; new capability now lands in the sister platforms (Core, Memory, Vault, Flow).
 
 > For deliverables and status, see [suplab/aether-core](https://github.com/suplab/aether-core).
 

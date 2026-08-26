@@ -17,7 +17,7 @@
 
 **Sister repository:** [`suplab/aether-core`](https://github.com/suplab/aether-core) — Aether Grid integrates with Core via `PersonalContextPort` to enrich agent decisions with individual user context.
 
-**Current status:** Phases 0–16 complete. Active phase: Phase 17 — Aether Core scaffold.
+**Current status:** Phases 0–17 complete. Phase 17 (Aether Core sister-repo scaffold) is delivered — `suplab/aether-core` is bootstrapped and has matured into a full platform (Phases 0–6). Grid's own roadmap is fully delivered; new ecosystem capability now lands in the sister platforms (Core, Memory, Vault, Flow).
 
 **Two runnable applications:**
 - `aether-proxy` — Data Plane (port 8080): Spring Cloud Gateway intercepting all API traffic

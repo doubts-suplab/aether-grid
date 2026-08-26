@@ -11,7 +11,7 @@
 
 ## Current Status
 
-**Active Phase:** Phase 17 — Aether Core Scaffold (sister repo bootstrap) 🔄 In Progress. Phases 0–16 complete.
+**Active Phase:** Phase 17 — Aether Core Scaffold (sister repo bootstrap) ✅ Complete. Phases 0–17 complete. The `suplab/aether-core` sister repository is bootstrapped and has since matured well past a scaffold (its own EEIK governance layer, Maven multi-module structure, personal-memory domain, GDPR/erasure, and a production Helm chart) — see [suplab/aether-core](https://github.com/suplab/aether-core). Grid's roadmap is fully delivered.
 
 ### Agent runtime — consumes the generic agent-harness ✅
 `aether-agents` now depends on the [`agent-harness`](https://github.com/doubts-suplab/agent-harness) Java
@@ -64,7 +64,7 @@ tracked separately.
 | 14 | Dashboard / Control Center | ✅ Complete | 1 |
 | 15 | Kubernetes + Helm Production Hardening | ✅ Complete | 1 |
 | 16 | Aether Core Integration | ✅ Complete | 1 |
-| 17 | Aether Core Scaffold (sister repo bootstrap) | 🔄 In Progress | — |
+| 17 | Aether Core Scaffold (sister repo bootstrap) | ✅ Complete | 1 |
 
 ---
 
